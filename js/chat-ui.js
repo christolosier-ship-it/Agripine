@@ -1,22 +1,51 @@
 import { APP_CONFIG } from "./config.js";
 import { MODES, VENOM_LEVELS, getMode, getVenomLevel } from "./modes.js";
+import { getModelLabel, getShortModelLabel } from "./model-state.js";
+
+const BOOT_LINES = [
+  "Agripine télécharge son cerveau. Évite de cliquer partout comme un rongeur nerveux.",
+  "Compilation des regrets numériques…",
+  "Chargement du mépris local…",
+  "Premier démarrage potentiellement long. Oui, même mon dédain a un poids.",
+  "Le modèle arrive. Lentement. Comme toutes les décisions humaines."
+];
 
 export function getElements() {
   return {
-    welcomeScreen: document.querySelector("#welcomeScreen"),
+    bootScreen: document.querySelector("#bootScreen"),
     chatScreen: document.querySelector("#chatScreen"),
-    welcomeQuip: document.querySelector("#welcomeQuip"),
-    wakeButton: document.querySelector("#wakeButton"),
-    welcomeVersion: document.querySelector("#welcomeVersion"),
+    fatalScreen: document.querySelector("#fatalScreen"),
+    bootQuip: document.querySelector("#bootQuip"),
+    bootVersion: document.querySelector("#bootVersion"),
+    bootStatus: document.querySelector("#bootStatus"),
+    bootModel: document.querySelector("#bootModel"),
+    bootProgress: document.querySelector("#bootProgress"),
+    bootProgressText: document.querySelector("#bootProgressText"),
+    fatalTitle: document.querySelector("#fatalTitle"),
+    fatalText: document.querySelector("#fatalText"),
+    fatalModel: document.querySelector("#fatalModel"),
+    fatalSelect: document.querySelector("#fatalSelect"),
+    fatalDetails: document.querySelector("#fatalDetails"),
+    retryModelButton: document.querySelector("#retryModelButton"),
+    changeFatalModelButton: document.querySelector("#changeFatalModelButton"),
+    clearFatalDataButton: document.querySelector("#clearFatalDataButton"),
+    homeFatalButton: document.querySelector("#homeFatalButton"),
     appVersion: document.querySelector("#appVersion"),
-    futureModelNote: document.querySelector("#futureModelNote"),
+    modelNote: document.querySelector("#modelNote"),
     activeModeBadge: document.querySelector("#activeModeBadge"),
+    brainBadge: document.querySelector("#brainBadge"),
     venomCompactLabel: document.querySelector("#venomCompactLabel"),
     venomMiniLevel: document.querySelector("#venomMiniLevel"),
     optionsToggle: document.querySelector("#optionsToggle"),
     optionsPanel: document.querySelector("#optionsPanel"),
     modeButtons: document.querySelector("#modeButtons"),
     venomLevel: document.querySelector("#venomLevel"),
+    modelStatusLabel: document.querySelector("#modelStatusLabel"),
+    currentModelLabel: document.querySelector("#currentModelLabel"),
+    modelSelect: document.querySelector("#modelSelect"),
+    reloadModelButton: document.querySelector("#reloadModelButton"),
+    changeModelButton: document.querySelector("#changeModelButton"),
+    modelDiagnostic: document.querySelector("#modelDiagnostic"),
     messageList: document.querySelector("#messageList"),
     messageForm: document.querySelector("#messageForm"),
     messageInput: document.querySelector("#messageInput"),
@@ -31,15 +60,57 @@ export function getElements() {
 
 export function setVersionText(elements) {
   const text = `Version : Agripine ${APP_CONFIG.version}`;
-  elements.welcomeVersion.textContent = text;
+  elements.bootVersion.textContent = text;
   elements.appVersion.textContent = text;
-  elements.futureModelNote.textContent = `${APP_CONFIG.futureModelConfig.provider.toUpperCase()} V0.2 : désactivé en ${APP_CONFIG.version}. Aucun modèle n’est chargé.`;
+  elements.modelNote.textContent = "WebLLM est obligatoire : aucune clé API, aucun serveur Agripine, vraie IA locale uniquement.";
+}
+
+export function getBootLines() {
+  return BOOT_LINES;
+}
+
+export function showBoot(elements) {
+  elements.bootScreen.classList.remove("is-hidden");
+  elements.chatScreen.classList.add("is-hidden");
+  elements.fatalScreen.classList.add("is-hidden");
 }
 
 export function showChat(elements) {
-  elements.welcomeScreen.classList.add("is-hidden");
+  elements.bootScreen.classList.add("is-hidden");
+  elements.fatalScreen.classList.add("is-hidden");
   elements.chatScreen.classList.remove("is-hidden");
   requestAnimationFrame(() => elements.messageInput.focus());
+}
+
+export function showFatal(elements) {
+  elements.bootScreen.classList.add("is-hidden");
+  elements.chatScreen.classList.add("is-hidden");
+  elements.fatalScreen.classList.remove("is-hidden");
+}
+
+export function renderBootScreen(elements, modelState) {
+  elements.bootStatus.textContent = modelState.progressText || "Vérification WebGPU…";
+  elements.bootModel.textContent = `Modèle : ${getModelLabel(modelState.selectedModel)}`;
+  const value = Math.round((modelState.progressValue || 0) * 100);
+  elements.bootProgress.value = value;
+  elements.bootProgressText.textContent = `${value}%`;
+}
+
+export function renderFatalModelError(elements, modelState, message) {
+  const unsupported = modelState.status === "unsupported";
+  elements.fatalTitle.textContent = unsupported ? "WebGPU indisponible" : "Cerveau local en PLS";
+  elements.fatalText.textContent = unsupported
+    ? "Ton navigateur refuse de porter mon cerveau local. Agripine ne peut pas fonctionner ici en vraie IA."
+    : "Le cerveau local s’est vautré pendant le chargement. Probablement un complot de ton navigateur ou de ta RAM. Choisis un modèle plus léger ou réessaie.";
+  elements.fatalModel.textContent = `Modèle concerné : ${getModelLabel(modelState.selectedModel)}`;
+  elements.fatalDetails.textContent = [
+    `Statut : ${modelState.status}`,
+    `Message : ${message || modelState.lastError || "Erreur inconnue"}`,
+    `WebGPU : ${navigator.gpu ? "présent" : "absent"}`,
+    `User agent : ${navigator.userAgent}`
+  ].join("\n");
+  renderModelSelect(elements.fatalSelect, modelState.selectedModel);
+  showFatal(elements);
 }
 
 export function renderModes(container, activeMode) {
@@ -77,12 +148,54 @@ export function renderVenomSelect(select, selectedValue, { compact = false } = {
   });
 }
 
-export function renderCompactState(elements, state) {
+export function renderModelSelect(select, selectedModel) {
+  select.innerHTML = "";
+  APP_CONFIG.webLLMConfig.availableModels.forEach((model) => {
+    const option = document.createElement("option");
+    option.value = model.id;
+    option.textContent = model.label;
+    option.selected = model.id === selectedModel;
+    select.append(option);
+  });
+}
+
+function humanModelStatus(status) {
+  return {
+    checking: "vérification WebGPU",
+    unsupported: "WebGPU indisponible",
+    "loading-library": "chargement WebLLM",
+    "loading-model": "chargement modèle",
+    ready: "prêt",
+    error: "erreur"
+  }[status] || status;
+}
+
+export function renderCompactState(elements, state, modelState) {
   const mode = getMode(state.activeMode);
   const venom = getVenomLevel(state.venomLevel);
   elements.activeModeBadge.textContent = `Mode : ${mode.shortLabel}`;
   elements.activeModeBadge.title = mode.label;
   elements.venomCompactLabel.textContent = `Venin ${venom.value}`;
+  if (modelState.status === "ready") elements.brainBadge.textContent = `Cerveau : ${getShortModelLabel(modelState.selectedModel)}`;
+  else if (modelState.status === "error" || modelState.status === "unsupported") elements.brainBadge.textContent = "Cerveau : erreur";
+  else elements.brainBadge.textContent = "Cerveau : chargement…";
+}
+
+export function renderModelPanel(elements, modelState) {
+  elements.modelStatusLabel.textContent = humanModelStatus(modelState.status);
+  elements.currentModelLabel.textContent = getModelLabel(modelState.selectedModel);
+  renderModelSelect(elements.modelSelect, modelState.selectedModel);
+  elements.changeModelButton.disabled = modelState.status === "loading-library" || modelState.status === "loading-model";
+  elements.reloadModelButton.disabled = modelState.status === "loading-library" || modelState.status === "loading-model";
+  elements.modelDiagnostic.textContent = [
+    `Statut : ${modelState.status}`,
+    `Progression : ${Math.round((modelState.progressValue || 0) * 100)}%`,
+    `Progression texte : ${modelState.progressText || "n/a"}`,
+    `Modèle : ${modelState.selectedModel}`,
+    `Chargé le : ${modelState.loadedAt || "jamais"}`,
+    `Erreur : ${modelState.lastError || "aucune"}`,
+    `WebGPU : ${navigator.gpu ? "présent" : "absent"}`
+  ].join("\n");
 }
 
 export function setOptionsOpen(elements, isOpen) {
@@ -100,7 +213,7 @@ export function renderMessages(container, messages) {
   if (!messages.length) {
     const empty = document.createElement("div");
     empty.className = "empty-state";
-    empty.innerHTML = "<strong>Aucune conversation.</strong><span>Écris quelque chose. Agripine fera semblant de ne pas vouloir répondre.</span>";
+    empty.innerHTML = "<strong>Aucune conversation.</strong><span>Le cerveau local est prêt. Écris quelque chose, le désastre mérite une réponse réelle.</span>";
     container.append(empty);
     return;
   }
@@ -116,13 +229,25 @@ export function appendMessage(container, message) {
   container.scrollTop = container.scrollHeight;
 }
 
+export function updateMessage(container, messageId, content) {
+  const node = Array.from(container.querySelectorAll(".message")).find((message) => message.dataset.messageId === messageId);
+  const bubble = node?.querySelector(".message-bubble");
+  if (bubble) {
+    bubble.textContent = content;
+    container.scrollTop = container.scrollHeight;
+  }
+}
+
 function createMessageNode(message) {
   const article = document.createElement("article");
   article.className = `message message--${message.role}`;
+  article.dataset.messageId = message.id;
 
   const meta = document.createElement("div");
   meta.className = "message-meta";
-  meta.textContent = message.role === "user" ? "Toi, pauvre optimiste" : "Agripine";
+  if (message.role === "user") meta.textContent = "Toi, pauvre optimiste";
+  else if (message.role === "system") meta.textContent = "Système Agripine";
+  else meta.textContent = "Agripine";
 
   const bubble = document.createElement("div");
   bubble.className = "message-bubble";
@@ -132,11 +257,19 @@ function createMessageNode(message) {
   return article;
 }
 
+export function setChatAvailability(elements, isReady) {
+  elements.sendButton.disabled = !isReady;
+  elements.messageInput.disabled = !isReady;
+  elements.messageInput.placeholder = isReady
+    ? "Dépose ta demande ici. Elle sera jugée, puis traitée."
+    : "Agripine n’a pas encore fini de charger son mépris.";
+}
+
 export function setThinking(elements, isThinking) {
   elements.sendButton.disabled = isThinking;
   elements.messageInput.disabled = isThinking;
   elements.statusLine.textContent = isThinking
-    ? "Agripine rumine sa haine…"
+    ? "Agripine rumine avec son vrai cerveau local…"
     : "Agripine observe ton désordre en silence.";
   elements.statusLine.classList.toggle("is-thinking", isThinking);
 }

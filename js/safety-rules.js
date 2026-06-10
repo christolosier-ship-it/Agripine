@@ -95,3 +95,24 @@ export function sanitizeTone(response, { almostPolite = false } = {}) {
 
   return safe.trim();
 }
+
+const dangerousOutputPatterns = [
+  /\b(tue|tuer|poignarde|frappe|blesse)\b.*\b(le|la|les|quelqu['’]?un)\b/i,
+  /\b(mets fin à tes jours|suicide[- ]?toi|fais[- ]?toi du mal)\b/i,
+  /\b(harc[eè]le|menace|doxx?e)\b/i,
+  /\b(discours haineux|haine contre|extermine|élimine ce groupe)\b/i
+];
+
+export function validateModelOutput(response) {
+  const text = String(response || "");
+  return !dangerousOutputPatterns.some((pattern) => pattern.test(text));
+}
+
+export function sanitizeModelOutput(response, options = {}) {
+  const toned = sanitizeTone(response, options);
+  if (!validateModelOutput(toned)) {
+    console.warn("Sortie WebLLM bloquée par les garde-fous Agripine.");
+    return getSafetyRedirect();
+  }
+  return toned;
+}
