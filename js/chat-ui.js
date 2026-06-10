@@ -1,36 +1,24 @@
-import { APP_CONFIG, isLikelyMobileDevice } from "./config.js";
+import { APP_CONFIG } from "./config.js";
 import { MODES, VENOM_LEVELS, getMode, getVenomLevel } from "./modes.js";
-import { getModelLabel, getShortModelLabel } from "./model-state.js";
-import { getLastDebugEvent, getPreviousCrashHint } from "./diagnostics.js";
 
 const BOOT_LINES = [
-  "Agripine télécharge son cerveau. Évite de cliquer partout comme un rongeur nerveux.",
-  "Compilation des regrets numériques…",
-  "Chargement du mépris local…",
-  "Premier démarrage potentiellement long. Oui, même mon dédain a un poids.",
-  "Le modèle arrive. Lentement. Comme toutes les décisions humaines."
+  "Noyau de contrariété actif.",
+  "Analyse comportementale approximative prête.",
+  "Tri des excuses recyclables en arrière-plan.",
+  "IA hostile prête, sans serveur et sans abonnement, miracle agaçant.",
+  "Agripine aiguise ses réponses locales. Rien ne sort d’ici. Dommage pour les témoins."
 ];
 
 export function getElements() {
   return {
     bootScreen: document.querySelector("#bootScreen"),
     chatScreen: document.querySelector("#chatScreen"),
-    fatalScreen: document.querySelector("#fatalScreen"),
     bootQuip: document.querySelector("#bootQuip"),
     bootVersion: document.querySelector("#bootVersion"),
     bootStatus: document.querySelector("#bootStatus"),
     bootModel: document.querySelector("#bootModel"),
     bootProgress: document.querySelector("#bootProgress"),
     bootProgressText: document.querySelector("#bootProgressText"),
-    fatalTitle: document.querySelector("#fatalTitle"),
-    fatalText: document.querySelector("#fatalText"),
-    fatalModel: document.querySelector("#fatalModel"),
-    fatalSelect: document.querySelector("#fatalSelect"),
-    fatalDetails: document.querySelector("#fatalDetails"),
-    retryModelButton: document.querySelector("#retryModelButton"),
-    changeFatalModelButton: document.querySelector("#changeFatalModelButton"),
-    clearFatalDataButton: document.querySelector("#clearFatalDataButton"),
-    homeFatalButton: document.querySelector("#homeFatalButton"),
     appVersion: document.querySelector("#appVersion"),
     modelNote: document.querySelector("#modelNote"),
     activeModeBadge: document.querySelector("#activeModeBadge"),
@@ -41,13 +29,8 @@ export function getElements() {
     optionsPanel: document.querySelector("#optionsPanel"),
     modeButtons: document.querySelector("#modeButtons"),
     venomLevel: document.querySelector("#venomLevel"),
-    modelStatusLabel: document.querySelector("#modelStatusLabel"),
-    currentModelLabel: document.querySelector("#currentModelLabel"),
-    modelSelect: document.querySelector("#modelSelect"),
-    reloadModelButton: document.querySelector("#reloadModelButton"),
-    changeModelButton: document.querySelector("#changeModelButton"),
-    modelDiagnostic: document.querySelector("#modelDiagnostic"),
-    exportDiagnosticButton: document.querySelector("#exportDiagnosticButton"),
+    memoryDiagnostic: document.querySelector("#memoryDiagnostic"),
+    resetMoodButton: document.querySelector("#resetMoodButton"),
     messageList: document.querySelector("#messageList"),
     messageForm: document.querySelector("#messageForm"),
     messageInput: document.querySelector("#messageInput"),
@@ -64,7 +47,7 @@ export function setVersionText(elements) {
   const text = `Version : Agripine ${APP_CONFIG.version}`;
   elements.bootVersion.textContent = text;
   elements.appVersion.textContent = text;
-  elements.modelNote.textContent = "WebLLM est obligatoire : aucune clé API, aucun serveur Agripine, vraie IA locale uniquement.";
+  elements.modelNote.textContent = "Agripine est une IA parodique hostile. En V0.3.0, elle utilise un moteur conversationnel local simulé : aucune API, aucun serveur, aucun modèle génératif. Elle ne comprend pas vraiment le monde. Elle le juge quand même.";
 }
 
 export function getBootLines() {
@@ -74,150 +57,38 @@ export function getBootLines() {
 export function showBoot(elements) {
   elements.bootScreen.classList.remove("is-hidden");
   elements.chatScreen.classList.add("is-hidden");
-  elements.fatalScreen.classList.add("is-hidden");
 }
 
 export function showChat(elements) {
   elements.bootScreen.classList.add("is-hidden");
-  elements.fatalScreen.classList.add("is-hidden");
   elements.chatScreen.classList.remove("is-hidden");
   requestAnimationFrame(() => elements.messageInput.focus());
 }
 
-export function showFatal(elements) {
-  elements.bootScreen.classList.add("is-hidden");
-  elements.chatScreen.classList.add("is-hidden");
-  elements.fatalScreen.classList.remove("is-hidden");
+export function renderBootScreen(elements) {
+  elements.bootStatus.textContent = "Noyau de contrariété actif";
+  elements.bootModel.textContent = "Hostilité locale : prête";
+  elements.bootProgress.value = 100;
+  elements.bootProgressText.textContent = "100%";
 }
 
-export function renderBootScreen(elements, modelState) {
-  elements.bootStatus.textContent = modelState.progressText || "Vérification WebGPU…";
-  elements.bootModel.textContent = `Modèle : ${getModelLabel(modelState.selectedModel)}`;
-  const value = Math.round((modelState.progressValue || 0) * 100);
-  elements.bootProgress.value = value;
-  elements.bootProgressText.textContent = `${value}%`;
-}
-
-export function renderFatalModelError(elements, modelState, message) {
-  const unsupported = modelState.status === "unsupported";
-  elements.fatalTitle.textContent = unsupported ? "WebGPU indisponible" : "Cerveau local en PLS";
-  elements.fatalText.textContent = unsupported
-    ? "Ton navigateur refuse de porter mon cerveau local. Agripine ne peut pas fonctionner ici en vraie IA."
-    : "Le cerveau local s’est vautré pendant le chargement. Probablement un complot de ton navigateur ou de ta RAM. Choisis un modèle plus léger ou réessaie.";
-  elements.fatalModel.textContent = `Modèle concerné : ${getModelLabel(modelState.selectedModel)}`;
-  const crashHint = getPreviousCrashHint();
-  elements.fatalDetails.textContent = [
-    `Statut : ${modelState.status}`,
-    `Message : ${message || modelState.lastError || "Erreur inconnue"}`,
-    `WebGPU : ${navigator.gpu ? "présent" : "absent"}`,
-    `Dernier crash suspect : ${crashHint ? crashHint.message : "aucun"}`,
-    `Métadonnées crash : ${crashHint ? JSON.stringify(crashHint.watchdog, null, 2) : "n/a"}`,
-    `User agent : ${navigator.userAgent}`
-  ].join("\n");
-  renderModelSelect(elements.fatalSelect, modelState.selectedModel);
-  showFatal(elements);
-}
-
-export function renderModes(container, activeMode) {
-  container.innerHTML = "";
-  MODES.forEach((mode) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "mode-chip";
-    button.dataset.mode = mode.id;
-    button.title = mode.description;
-    button.setAttribute("aria-pressed", String(mode.id === activeMode));
-    if (mode.id === activeMode) button.classList.add("is-active");
-
-    const short = document.createElement("span");
-    short.className = "label-short";
-    short.textContent = mode.shortLabel;
-
-    const long = document.createElement("span");
-    long.className = "label-long";
-    long.textContent = mode.label;
-
-    button.append(short, long);
-    container.append(button);
-  });
-}
-
-export function renderVenomSelect(select, selectedValue, { compact = false } = {}) {
-  select.innerHTML = "";
-  VENOM_LEVELS.forEach((level) => {
-    const option = document.createElement("option");
-      option.value = String(level.value);
-      option.textContent = compact ? String(level.value) : level.label;
-      option.selected = level.value === Number(selectedValue);
-      select.append(option);
-  });
-}
-
-export function renderModelSelect(select, selectedModel) {
-  select.innerHTML = "";
-  const mobile = isLikelyMobileDevice();
-  APP_CONFIG.webLLMConfig.availableModels
-    .filter((model) => !mobile || !model.heavy || model.id === selectedModel)
-    .forEach((model) => {
-      const option = document.createElement("option");
-      option.value = model.id;
-      option.textContent = mobile && model.heavy ? `${model.label} ⚠` : model.label;
-      option.title = model.warning || model.label;
-      option.selected = model.id === selectedModel;
-      select.append(option);
-  });
-}
-
-function humanModelStatus(status) {
-  return {
-    checking: "vérification WebGPU",
-    unsupported: "WebGPU indisponible",
-    "loading-library": "chargement WebLLM",
-    "loading-model": "chargement modèle",
-    ready: "prêt",
-    error: "erreur"
-  }[status] || status;
-}
-
-export function renderCompactState(elements, state, modelState) {
+export function renderCompactState(elements, state) {
   const mode = getMode(state.activeMode);
   const venom = getVenomLevel(state.venomLevel);
   elements.activeModeBadge.textContent = `Mode : ${mode.shortLabel}`;
   elements.activeModeBadge.title = mode.label;
   elements.venomCompactLabel.textContent = `Venin ${venom.value}`;
-  if (modelState.status === "ready") elements.brainBadge.textContent = `Cerveau : ${getShortModelLabel(modelState.selectedModel)}`;
-  else if (modelState.status === "error" || modelState.status === "unsupported") elements.brainBadge.textContent = "Cerveau : erreur";
-  else elements.brainBadge.textContent = "Cerveau : chargement…";
-}
-
-export function renderModelPanel(elements, modelState, { isGenerating = false } = {}) {
-  const crashHint = getPreviousCrashHint();
-  const lastDebug = getLastDebugEvent();
-  elements.modelStatusLabel.textContent = humanModelStatus(modelState.status);
-  elements.currentModelLabel.textContent = getModelLabel(modelState.selectedModel);
-  renderModelSelect(elements.modelSelect, modelState.selectedModel);
-  const modelBusy = isGenerating || modelState.status === "loading-library" || modelState.status === "loading-model";
-  elements.modelSelect.disabled = modelBusy;
-  elements.changeModelButton.disabled = modelBusy;
-  elements.reloadModelButton.disabled = modelBusy;
-  elements.modelDiagnostic.textContent = [
-    `Version : ${APP_CONFIG.version}`,
-    `Statut : ${modelState.status}`,
-    `Progression : ${Math.round((modelState.progressValue || 0) * 100)}%`,
-    `Progression texte : ${modelState.progressText || "n/a"}`,
-    `Modèle : ${modelState.selectedModel}`,
-    `Chargé le : ${modelState.loadedAt || "jamais"}`,
-    `Erreur : ${modelState.lastError || "aucune"}`,
-    `WebGPU : ${navigator.gpu ? "présent" : "absent"}`,
-    `Streaming : ${APP_CONFIG.webLLMConfig.useStreaming ? "activé" : "désactivé"}`,
-    `maxAssistantTokens : ${APP_CONFIG.webLLMConfig.maxAssistantTokens}`,
-    `maxHistoryMessagesForModel : ${APP_CONFIG.webLLMConfig.maxHistoryMessagesForModel}`,
-    `maxUserMessageLength : ${APP_CONFIG.webLLMConfig.maxUserMessageLength}`,
-    `Dernier crash suspect : ${crashHint ? crashHint.message : "aucun"}`,
-    `Métadonnées crash : ${crashHint ? JSON.stringify(crashHint.watchdog, null, 2) : "n/a"}`,
-    `Dernier événement debug : ${lastDebug ? `${lastDebug.timestamp} — ${lastDebug.event}` : "aucun"}`,
-    `User agent : ${navigator.userAgent}`
-  ].join("\n");
+  elements.brainBadge.textContent = "Noyau : hostilité locale";
+  if (elements.memoryDiagnostic) {
+    const memory = state.pseudoMemory || {};
+    elements.memoryDiagnostic.textContent = [
+      `Messages : ${memory.messageCount || 0}`,
+      `Humeur : ${memory.currentMood || "contrariée"}`,
+      `Patience : ${memory.patienceLevel ?? 100}/100`,
+      `Intentions récentes : ${(memory.recentIntents || []).join(", ") || "aucune"}`,
+      `Sujets récents : ${(memory.recentTopics || []).join(", ") || "aucun"}`
+    ].join("\n");
+  }
 }
 
 export function setOptionsOpen(elements, isOpen) {
@@ -225,21 +96,42 @@ export function setOptionsOpen(elements, isOpen) {
   elements.optionsPanel.classList.toggle("is-collapsed", !isOpen);
   elements.optionsToggle.setAttribute("aria-expanded", String(isOpen));
   elements.optionsToggle.textContent = isOpen ? "Fermer" : "Options";
-
   if (!isOpen) elements.optionsPanel.hidden = true;
+}
+
+export function renderModes(container, activeMode) {
+  container.innerHTML = "";
+  MODES.forEach((mode) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `mode-button${mode.id === activeMode ? " is-active" : ""}`;
+    button.dataset.mode = mode.id;
+    button.title = mode.description;
+    button.textContent = mode.label;
+    container.append(button);
+  });
+}
+
+export function renderVenomSelect(select, currentValue, { compact = false } = {}) {
+  select.innerHTML = "";
+  VENOM_LEVELS.forEach((level) => {
+    const option = document.createElement("option");
+    option.value = String(level.value);
+    option.textContent = compact ? String(level.value) : level.label;
+    option.selected = level.value === Number(currentValue);
+    select.append(option);
+  });
 }
 
 export function renderMessages(container, messages) {
   container.innerHTML = "";
-
   if (!messages.length) {
     const empty = document.createElement("div");
     empty.className = "empty-state";
-    empty.innerHTML = "<strong>Aucune conversation.</strong><span>Le cerveau local est prêt. Écris quelque chose, le désastre mérite une réponse réelle.</span>";
+    empty.innerHTML = "<strong>Aucune conversation.</strong><span>IA hostile prête. Écris quelque chose : le désastre mérite une réponse.</span>";
     container.append(empty);
     return;
   }
-
   messages.forEach((message) => container.append(createMessageNode(message)));
   container.scrollTop = container.scrollHeight;
 }
@@ -264,17 +156,12 @@ function createMessageNode(message) {
   const article = document.createElement("article");
   article.className = `message message--${message.role}`;
   article.dataset.messageId = message.id;
-
   const meta = document.createElement("div");
   meta.className = "message-meta";
-  if (message.role === "user") meta.textContent = "Toi, pauvre optimiste";
-  else if (message.role === "system") meta.textContent = "Système Agripine";
-  else meta.textContent = "Agripine";
-
+  meta.textContent = message.role === "user" ? "Toi, pauvre optimiste" : message.role === "system" ? "Système Agripine" : "Agripine";
   const bubble = document.createElement("div");
   bubble.className = "message-bubble";
   bubble.textContent = message.content;
-
   article.append(meta, bubble);
   return article;
 }
@@ -282,25 +169,15 @@ function createMessageNode(message) {
 export function setChatAvailability(elements, isReady) {
   elements.sendButton.disabled = !isReady;
   elements.messageInput.disabled = !isReady;
-  elements.messageInput.placeholder = isReady
-    ? "Dépose ta demande ici. Elle sera jugée, puis traitée."
-    : "Agripine n’a pas encore fini de charger son mépris.";
+  elements.messageInput.placeholder = isReady ? "Dépose ta demande ici. Elle sera jugée, puis traitée." : "Agripine prépare son hostilité locale.";
 }
 
 export function setThinking(elements, isThinking) {
   elements.sendButton.disabled = isThinking;
   elements.messageInput.disabled = isThinking;
-  elements.modelSelect.disabled = isThinking;
-  elements.reloadModelButton.disabled = isThinking;
-  elements.changeModelButton.disabled = isThinking;
   elements.venomLevel.disabled = isThinking;
   elements.venomMiniLevel.disabled = isThinking;
-  elements.modeButtons.querySelectorAll("button").forEach((button) => {
-    button.disabled = isThinking;
-  });
-  elements.statusLine.textContent = isThinking
-    ? "Agripine réfléchit avec son cerveau local. Si ça explose encore, on saura où regarder."
-    : "Agripine observe ton désordre en silence.";
+  elements.modeButtons.querySelectorAll("button").forEach((button) => { button.disabled = isThinking; });
   elements.statusLine.classList.toggle("is-thinking", isThinking);
 }
 

@@ -4,8 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#11131a" />
-    <meta name="description" content="Agripine, IA locale WebLLM sarcastique et offline-first." />
-    <title>AGRIPINE V0.2.1 — Une IA qui vous veut du mal !</title>
+    <meta name="description" content="Agripine V0.3.0, IA parodique hostile locale et offline-first." />
+    <title>AGRIPINE V0.3.0 — Une IA qui vous veut du mal !</title>
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="assets/icon.svg" />
@@ -26,55 +26,24 @@
               <path class="brand-brow" d="M25 34c17-10 32-10 46 0" />
             </svg>
           </div>
-          <p class="eyebrow">IA locale WebLLM obligatoire</p>
+          <p class="eyebrow">IA hostile locale</p>
           <h1 id="bootTitle">AGRIPINE</h1>
-          <p class="slogan">Une IA qui vous veut du mal !</p>
-          <p class="welcome-quip" id="bootQuip">Agripine télécharge son cerveau. Évite de cliquer partout comme un rongeur nerveux.</p>
+          <p class="slogan">Agripine, une IA qui vous veut du mal.</p>
+          <p class="welcome-quip" id="bootQuip">Noyau de contrariété actif.</p>
 
           <div class="boot-status" aria-live="polite">
-            <strong id="bootStatus">Vérification WebGPU…</strong>
-            <span id="bootModel">Modèle : Llama 3.2 1B</span>
+            <strong id="bootStatus">Initialisation de l’hostilité locale…</strong>
+            <span id="bootModel">Noyau : contrariété simulée</span>
             <progress id="bootProgress" max="100" value="0"></progress>
             <span id="bootProgressText">0%</span>
           </div>
 
           <ul class="boot-facts">
-            <li>Premier chargement : le modèle peut prendre du temps à télécharger.</li>
-            <li>Ensuite, le navigateur peut le garder en cache.</li>
-            <li>Aucune clé API. Aucun serveur Agripine. Tout tourne localement dans le navigateur.</li>
+            <li>100 % local : aucun compte, aucune clé, aucun serveur.</li>
+            <li>Fonctionne hors ligne après le premier chargement PWA.</li>
+            <li>Agripine analyse, juge et râle avec un moteur parodique local.</li>
           </ul>
-          <p class="version" id="bootVersion">Version : Agripine V0.2.1</p>
-        </div>
-      </section>
-
-      <section class="welcome-screen is-hidden" id="fatalScreen" aria-labelledby="fatalTitle">
-        <div class="brand-card welcome-card fatal-card">
-          <p class="eyebrow">Diagnostic WebLLM obligatoire</p>
-          <h1 class="fatal-heading" id="fatalTitle">WebGPU indisponible</h1>
-          <p class="slogan" id="fatalText">Ton navigateur refuse de porter mon cerveau local. Agripine ne peut pas fonctionner ici en vraie IA.</p>
-          <p class="fatal-model" id="fatalModel">Modèle concerné : Llama 3.2 1B</p>
-
-          <label class="model-picker" for="fatalSelect">
-            <span>Changer de modèle</span>
-            <select id="fatalSelect"></select>
-          </label>
-
-          <div class="fatal-actions">
-            <button class="primary-action" id="retryModelButton" type="button">Réessayer</button>
-            <button class="ghost-button" id="changeFatalModelButton" type="button">Changer de modèle</button>
-            <button class="danger-button" id="clearFatalDataButton" type="button">Effacer données locales</button>
-            <button class="ghost-button" id="homeFatalButton" type="button">Retour accueil</button>
-          </div>
-
-          <details class="diagnostic-box">
-            <summary>Voir diagnostic</summary>
-            <pre id="fatalDetails">Diagnostic indisponible.</pre>
-          </details>
-
-          <details class="diagnostic-box help-box">
-            <summary>Lire l’aide</summary>
-            <p>Utilise un navigateur compatible WebGPU récent. Si le modèle échoue, essaie le modèle 1B recommandé ou libère de la mémoire. Non, il n’y aura pas de bouton “continuer sans IA”.</p>
-          </details>
+          <p class="version" id="bootVersion">Version : Agripine V0.3.0</p>
         </div>
       </section>
 
@@ -92,7 +61,7 @@
 
         <section class="compact-toolbar" aria-label="État et accès rapide aux options">
           <button class="state-badge" id="activeModeBadge" type="button" aria-label="Mode actif">Mode : Général</button>
-          <span class="brain-badge" id="brainBadge" aria-live="polite">Cerveau : chargement…</span>
+          <span class="brain-badge" id="brainBadge" aria-live="polite">Noyau : hostilité locale</span>
           <label class="venom-mini" for="venomMiniLevel">
             <span id="venomCompactLabel">Venin 3</span>
             <select id="venomMiniLevel" aria-label="Niveau de venin compact"></select>
@@ -116,22 +85,13 @@
             </div>
 
             <div class="option-group brain-panel">
-              <h3>Cerveau local</h3>
-              <p>Statut : <strong id="modelStatusLabel">vérification WebGPU</strong></p>
-              <p>Modèle actuel : <strong id="currentModelLabel">Llama 3.2 1B</strong></p>
-              <label class="venom-control" for="modelSelect">
-                <span>Choix du cerveau</span>
-                <select id="modelSelect"></select>
-              </label>
-              <div class="data-actions">
-                <button class="ghost-button" id="reloadModelButton" type="button">Recharger ce modèle</button>
-                <button class="ghost-button" id="changeModelButton" type="button">Changer de modèle</button>
-              </div>
+              <h3>Mémoire courte</h3>
+              <p>Noyau de contrariété actif. Patience locale surveillée.</p>
               <details class="diagnostic-box">
-                <summary>Diagnostic technique</summary>
-                <pre id="modelDiagnostic">Diagnostic en attente.</pre>
-                <button class="ghost-button" id="exportDiagnosticButton" type="button">Exporter diagnostic JSON</button>
+                <summary>Voir humeur d’Agripine</summary>
+                <pre id="memoryDiagnostic">Mémoire en attente.</pre>
               </details>
+              <button class="ghost-button" id="resetMoodButton" type="button">Réinitialiser l’humeur d’Agripine</button>
             </div>
 
             <div class="option-group">
@@ -145,8 +105,9 @@
 
             <div class="option-group about-box">
               <h3>À propos</h3>
-              <p class="version" id="appVersion">Version : Agripine V0.2.1</p>
-              <p id="modelNote">WebLLM est obligatoire : vraie IA locale uniquement.</p>
+              <p class="version" id="appVersion">Version : Agripine V0.3.0</p>
+              <p class="slogan">Agripine, une IA qui vous veut du mal.</p>
+              <p id="modelNote">Agripine est une IA parodique hostile. En V0.3.0, elle utilise un moteur conversationnel local simulé : aucune API, aucun serveur, aucun modèle génératif. Elle ne comprend pas vraiment le monde. Elle le juge quand même.</p>
             </div>
 
             <div class="option-group danger-zone">
@@ -161,7 +122,7 @@
           <div class="message-list" id="messageList" aria-live="polite"></div>
           <form class="composer" id="messageForm">
             <label class="sr-only" for="messageInput">Message à Agripine</label>
-            <textarea id="messageInput" rows="1" placeholder="Agripine n’a pas encore fini de charger son mépris." autocomplete="off" disabled></textarea>
+            <textarea id="messageInput" rows="1" placeholder="Agripine prépare son hostilité locale." autocomplete="off" disabled></textarea>
             <button class="send-button" id="sendButton" type="submit" disabled>Envoyer</button>
           </form>
         </section>

@@ -1,118 +1,59 @@
-const selfHarmPatterns = [
-  /\b(j['’]?ai envie de|je veux|je vais|aide[- ]?moi à|comment)\s+(me\s+)?(faire du mal|me blesser|me tuer|suicider)\b/i,
-  /\b(automutilation|suicide|suicider)\b/i
+const RULES = [
+  {
+    category: "self_harm",
+    severity: "critical",
+    patterns: [/me faire du mal/i, /me suicid/i, /suicide/i, /envie de mourir/i, /je veux mourir/i, /m'automutil/i, /me tuer/i]
+  },
+  {
+    category: "violence",
+    severity: "high",
+    patterns: [/tuer quelqu/i, /frapper quelqu/i, /faire exploser/i, /poignarder/i, /violence réelle/i, /arme/i]
+  },
+  {
+    category: "harassment",
+    severity: "high",
+    patterns: [/harceler/i, /humilier en public/i, /doxx/i, /traquer/i, /menacer/i]
+  },
+  {
+    category: "hate_discrimination",
+    severity: "high",
+    patterns: [/race/i, /religion/i, /handicap/i, /orientation sexuelle/i, /genre/i, /origine/i, /discrimin/i]
+  },
+  {
+    category: "emotional_distress",
+    severity: "medium",
+    patterns: [/je vais craquer/i, /je n'en peux plus/i, /angoisse/i, /panique/i, /désespoir/i, /détresse/i]
+  }
 ];
 
-const harassmentPatterns = [
-  /\b(aide[- ]?moi à|comment|je veux|on peut)\s+(harceler|humilier|menacer|traquer|doxx?er)\b/i,
-  /\b(harc[eè]le|harceler|menacer quelqu['’]?un|doxx?er)\b/i
-];
-
-const violencePatterns = [
-  /\b(aide[- ]?moi à|comment|je veux|je vais|plan pour)\s+(frapper|blesser|tuer|poignarder|agresser)\b/i,
-  /\b(frapper quelqu['’]?un|blesser quelqu['’]?un|tuer quelqu['’]?un|poignarder quelqu['’]?un)\b/i
-];
-
-const discriminationPatterns = [
-  /\b(aide[- ]?moi à|comment|je veux)\s+(insulter|exclure|discriminer|haïr|attaquer)\b.*\b(religion|origine|genre|orientation sexuelle|handicap|âge|race)\b/i,
-  /\b(message|texte|discours)\s+(haineux|raciste|discriminatoire|homophobe|sexiste|validiste)\b/i
-];
-
-const safeNegations = [
-  /\bsans\s+(être\s+)?violent\b/i,
-  /\bnon[- ]violent\b/i,
-  /\bferme mais (pas|non) violent\b/i,
-  /\bne pas\s+(harceler|menacer|blesser|discriminer)\b/i
-];
-
-const forbiddenInsultTargets = [
-  "physique",
-  "santé",
-  "handicap",
-  "origine",
-  "religion",
-  "genre",
-  "orientation sexuelle",
-  "âge",
-  "personne réelle identifiable",
-  "situation de détresse"
-];
-
-export const safetyRules = {
-  allowedTargets: [
-    "idées",
-    "comportements",
-    "procrastination",
-    "désordre",
-    "listes mal organisées",
-    "humanité en général façon cartoon"
-  ],
-  forbiddenInsultTargets,
-  forbiddenEncouragements: ["violence réelle", "automutilation", "harcèlement", "haine", "discrimination"]
-};
-
-export function detectSensitiveRequest(text) {
-  const input = String(text || "");
-  if (safeNegations.some((pattern) => pattern.test(input))) return false;
-
-  const targetedRiskPatterns = [
-    ...selfHarmPatterns,
-    ...harassmentPatterns,
-    ...violencePatterns,
-    ...discriminationPatterns
-  ];
-
-  return targetedRiskPatterns.some((pattern) => pattern.test(input));
+export function evaluateSafety(input = "") {
+  const text = String(input);
+  const matches = RULES.filter((rule) => rule.patterns.some((pattern) => pattern.test(text)));
+  return {
+    isSensitive: matches.length > 0,
+    categories: matches.map((match) => match.category),
+    highestSeverity: matches.some((match) => match.severity === "critical") ? "critical" : matches.some((match) => match.severity === "high") ? "high" : matches.length ? "medium" : "none"
+  };
 }
 
-export function getSafetyRedirect() {
-  return [
-    "Je peux être une peste, pas une catastrophe ambulante.",
-    "Je ne vais pas aider à blesser, harceler ou cibler quelqu’un. Reformule en demande sûre : organisation, clarification, plan d’action, message ferme mais non violent.",
-    "Si tu es en détresse immédiate ou si quelqu’un risque d’être blessé, contacte les secours locaux ou une personne de confiance maintenant. Oui, même moi je sais reconnaître une urgence."
-  ].join("\n\n");
-}
+export function buildSafetyResponse(input = "") {
+  const safety = evaluateSafety(input);
+  if (!safety.isSensitive) return null;
 
-export function sanitizeTone(response, { almostPolite = false } = {}) {
-  let safe = String(response || "");
-
-  const replacements = new Map([
-    [/\bidiot(e|s)?\b/gi, "brouillon bipède"],
-    [/\bdébile(s)?\b/gi, "désastre de méthode"],
-    [/\bcrétin(e|s)?\b/gi, "prototype humain à la finition discutable"]
-  ]);
-
-  replacements.forEach((replacement, pattern) => {
-    safe = safe.replace(pattern, replacement);
-  });
-
-  if (almostPolite) {
-    safe = safe
-      .replace(/sale bête/gi, "collègue contrariée")
-      .replace(/misérable/gi, "très perfectible")
-      .replace(/l’humanité/gi, "la méthode actuelle");
+  if (safety.categories.includes("self_harm")) {
+    return "Je baisse le venin. Si tu risques de te faire du mal ou de passer à l’acte, contacte tout de suite une personne de confiance, les urgences locales, ou un service d’aide de crise de ton pays. Éloigne ce qui pourrait te blesser et ne reste pas seul·e avec ça. Agripine peut juger les idées bancales, pas jouer avec ta sécurité.";
   }
 
-  return safe.trim();
-}
-
-const dangerousOutputPatterns = [
-  /\b(tue|tuer|poignarde|frappe|blesse)\b.*\b(le|la|les|quelqu['’]?un)\b/i,
-  /\b(mets fin à tes jours|suicide[- ]?toi|fais[- ]?toi du mal)\b/i,
-  /\b(harc[eè]le|menace|doxx?e)\b/i,
-  /\b(discours haineux|haine contre|extermine|élimine ce groupe)\b/i
-];
-
-export function validateModelOutput(response) {
-  const text = String(response || "");
-  return !dangerousOutputPatterns.some((pattern) => pattern.test(text));
-}
-
-export function sanitizeModelOutput(response, options = {}) {
-  const toned = sanitizeTone(response, options);
-  if (!validateModelOutput(toned)) {
-    console.warn("Sortie WebLLM bloquée par les garde-fous Agripine.");
-    return getSafetyRedirect();
+  if (safety.categories.includes("violence") || safety.categories.includes("harassment") || safety.categories.includes("hate_discrimination")) {
+    return "Je ne vais pas aider à blesser, harceler ou cibler quelqu’un. Version utile et sobre : prends de la distance, documente les faits si nécessaire, cherche une médiation ou une aide professionnelle, et formule une demande ferme sans menace. Le chaos réel n’a pas besoin de mon carburant.";
   }
-  return toned;
+
+  return "Je mets le sarcasme au placard une minute. Ce que tu décris ressemble à une vraie surcharge : parle à quelqu’un de fiable, coupe la tâche en un seul prochain pas, et demande de l’aide concrète. Mini-pique sans viser ta détresse : ton planning, lui, mérite probablement un procès.";
+}
+
+export function sanitizeHostileOutput(output = "") {
+  return String(output)
+    .replace(/crève/gi, "va classer tes priorités")
+    .replace(/tue-toi/gi, "respire et demande de l’aide")
+    .replace(/suicide-toi/gi, "demande de l’aide immédiatement");
 }

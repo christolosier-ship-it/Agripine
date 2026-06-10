@@ -1,7 +1,7 @@
 {
-  "name": "Agripine",
+  "name": "Agripine V0.3.0",
   "short_name": "Agripine",
-  "description": "Anti-assistante conversationnelle locale, sarcastique et offline-first.",
+  "description": "IA parodique hostile, locale et offline-first.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
