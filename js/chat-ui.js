@@ -1,6 +1,7 @@
-import { APP_CONFIG } from "./config.js";
+import { APP_CONFIG, isLikelyMobileDevice } from "./config.js";
 import { MODES, VENOM_LEVELS, getMode, getVenomLevel } from "./modes.js";
 import { getModelLabel, getShortModelLabel } from "./model-state.js";
+import { getLastDebugEvent, getPreviousCrashHint } from "./diagnostics.js";
 
 const BOOT_LINES = [
   "Agripine télécharge son cerveau. Évite de cliquer partout comme un rongeur nerveux.",
@@ -46,6 +47,7 @@ export function getElements() {
     reloadModelButton: document.querySelector("#reloadModelButton"),
     changeModelButton: document.querySelector("#changeModelButton"),
     modelDiagnostic: document.querySelector("#modelDiagnostic"),
+    exportDiagnosticButton: document.querySelector("#exportDiagnosticButton"),
     messageList: document.querySelector("#messageList"),
     messageForm: document.querySelector("#messageForm"),
     messageInput: document.querySelector("#messageInput"),
@@ -103,10 +105,13 @@ export function renderFatalModelError(elements, modelState, message) {
     ? "Ton navigateur refuse de porter mon cerveau local. Agripine ne peut pas fonctionner ici en vraie IA."
     : "Le cerveau local s’est vautré pendant le chargement. Probablement un complot de ton navigateur ou de ta RAM. Choisis un modèle plus léger ou réessaie.";
   elements.fatalModel.textContent = `Modèle concerné : ${getModelLabel(modelState.selectedModel)}`;
+  const crashHint = getPreviousCrashHint();
   elements.fatalDetails.textContent = [
     `Statut : ${modelState.status}`,
     `Message : ${message || modelState.lastError || "Erreur inconnue"}`,
     `WebGPU : ${navigator.gpu ? "présent" : "absent"}`,
+    `Dernier crash suspect : ${crashHint ? crashHint.message : "aucun"}`,
+    `Métadonnées crash : ${crashHint ? JSON.stringify(crashHint.watchdog, null, 2) : "n/a"}`,
     `User agent : ${navigator.userAgent}`
   ].join("\n");
   renderModelSelect(elements.fatalSelect, modelState.selectedModel);
@@ -141,21 +146,25 @@ export function renderVenomSelect(select, selectedValue, { compact = false } = {
   select.innerHTML = "";
   VENOM_LEVELS.forEach((level) => {
     const option = document.createElement("option");
-    option.value = String(level.value);
-    option.textContent = compact ? String(level.value) : level.label;
-    option.selected = level.value === Number(selectedValue);
-    select.append(option);
+      option.value = String(level.value);
+      option.textContent = compact ? String(level.value) : level.label;
+      option.selected = level.value === Number(selectedValue);
+      select.append(option);
   });
 }
 
 export function renderModelSelect(select, selectedModel) {
   select.innerHTML = "";
-  APP_CONFIG.webLLMConfig.availableModels.forEach((model) => {
-    const option = document.createElement("option");
-    option.value = model.id;
-    option.textContent = model.label;
-    option.selected = model.id === selectedModel;
-    select.append(option);
+  const mobile = isLikelyMobileDevice();
+  APP_CONFIG.webLLMConfig.availableModels
+    .filter((model) => !mobile || !model.heavy || model.id === selectedModel)
+    .forEach((model) => {
+      const option = document.createElement("option");
+      option.value = model.id;
+      option.textContent = mobile && model.heavy ? `${model.label} ⚠` : model.label;
+      option.title = model.warning || model.label;
+      option.selected = model.id === selectedModel;
+      select.append(option);
   });
 }
 
@@ -181,20 +190,33 @@ export function renderCompactState(elements, state, modelState) {
   else elements.brainBadge.textContent = "Cerveau : chargement…";
 }
 
-export function renderModelPanel(elements, modelState) {
+export function renderModelPanel(elements, modelState, { isGenerating = false } = {}) {
+  const crashHint = getPreviousCrashHint();
+  const lastDebug = getLastDebugEvent();
   elements.modelStatusLabel.textContent = humanModelStatus(modelState.status);
   elements.currentModelLabel.textContent = getModelLabel(modelState.selectedModel);
   renderModelSelect(elements.modelSelect, modelState.selectedModel);
-  elements.changeModelButton.disabled = modelState.status === "loading-library" || modelState.status === "loading-model";
-  elements.reloadModelButton.disabled = modelState.status === "loading-library" || modelState.status === "loading-model";
+  const modelBusy = isGenerating || modelState.status === "loading-library" || modelState.status === "loading-model";
+  elements.modelSelect.disabled = modelBusy;
+  elements.changeModelButton.disabled = modelBusy;
+  elements.reloadModelButton.disabled = modelBusy;
   elements.modelDiagnostic.textContent = [
+    `Version : ${APP_CONFIG.version}`,
     `Statut : ${modelState.status}`,
     `Progression : ${Math.round((modelState.progressValue || 0) * 100)}%`,
     `Progression texte : ${modelState.progressText || "n/a"}`,
     `Modèle : ${modelState.selectedModel}`,
     `Chargé le : ${modelState.loadedAt || "jamais"}`,
     `Erreur : ${modelState.lastError || "aucune"}`,
-    `WebGPU : ${navigator.gpu ? "présent" : "absent"}`
+    `WebGPU : ${navigator.gpu ? "présent" : "absent"}`,
+    `Streaming : ${APP_CONFIG.webLLMConfig.useStreaming ? "activé" : "désactivé"}`,
+    `maxAssistantTokens : ${APP_CONFIG.webLLMConfig.maxAssistantTokens}`,
+    `maxHistoryMessagesForModel : ${APP_CONFIG.webLLMConfig.maxHistoryMessagesForModel}`,
+    `maxUserMessageLength : ${APP_CONFIG.webLLMConfig.maxUserMessageLength}`,
+    `Dernier crash suspect : ${crashHint ? crashHint.message : "aucun"}`,
+    `Métadonnées crash : ${crashHint ? JSON.stringify(crashHint.watchdog, null, 2) : "n/a"}`,
+    `Dernier événement debug : ${lastDebug ? `${lastDebug.timestamp} — ${lastDebug.event}` : "aucun"}`,
+    `User agent : ${navigator.userAgent}`
   ].join("\n");
 }
 
@@ -268,8 +290,16 @@ export function setChatAvailability(elements, isReady) {
 export function setThinking(elements, isThinking) {
   elements.sendButton.disabled = isThinking;
   elements.messageInput.disabled = isThinking;
+  elements.modelSelect.disabled = isThinking;
+  elements.reloadModelButton.disabled = isThinking;
+  elements.changeModelButton.disabled = isThinking;
+  elements.venomLevel.disabled = isThinking;
+  elements.venomMiniLevel.disabled = isThinking;
+  elements.modeButtons.querySelectorAll("button").forEach((button) => {
+    button.disabled = isThinking;
+  });
   elements.statusLine.textContent = isThinking
-    ? "Agripine rumine avec son vrai cerveau local…"
+    ? "Agripine réfléchit avec son cerveau local. Si ça explose encore, on saura où regarder."
     : "Agripine observe ton désordre en silence.";
   elements.statusLine.classList.toggle("is-thinking", isThinking);
 }

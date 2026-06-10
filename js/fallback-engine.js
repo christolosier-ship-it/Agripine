@@ -1,4 +1,4 @@
-// Legacy V0.1.1, non utilisé en V0.2.0. Conservé uniquement comme référence technique temporaire.
+// Legacy V0.1.1, non utilisé en V0.2.1. Conservé uniquement comme référence technique temporaire.
 import { persona, randomFrom } from "./persona.js";
 import { buildPromptContext } from "./prompt-builder.js";
 import { detectSensitiveRequest, getSafetyRedirect, sanitizeTone } from "./safety-rules.js";

@@ -1,3 +1,4 @@
+import { APP_CONFIG } from "./config.js";
 import { buildWebLLMMessages } from "./prompt-builder.js";
 import { detectSensitiveRequest, getSafetyRedirect, sanitizeModelOutput } from "./safety-rules.js";
 import { getModelStatus } from "./webllm-engine.js";
@@ -13,7 +14,7 @@ export async function generateAssistantResponse({ text, modeId, venomLevel, mess
 
   const status = getModelStatus();
   if (status.status !== "ready") {
-    throw new Error("Agripine n’a pas encore fini de charger son mépris. Le modèle WebLLM est obligatoire en V0.2.0.");
+    throw new Error("Agripine n’a pas encore fini de charger son mépris. Le modèle WebLLM est obligatoire en V0.2.1.");
   }
 
   const webLLMMessages = buildWebLLMMessages({ text, modeId, venomLevel, messages });
@@ -23,9 +24,9 @@ export async function generateAssistantResponse({ text, modeId, venomLevel, mess
     const raw = await generateWithModel({
       messages: webLLMMessages,
       venomLevel,
-      onToken: onToken
+      onToken: APP_CONFIG.webLLMConfig.useStreaming && onToken
         ? (delta, fullText) => {
-            onToken(delta, sanitizeModelOutput(fullText, { almostPolite }));
+            onToken(delta, fullText);
           }
         : undefined
     });

@@ -1,4 +1,4 @@
-const CACHE_NAME = "agripine-v0.2.0";
+const CACHE_NAME = "agripine-v0.2.1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -15,7 +15,9 @@ const APP_SHELL = [
   "./js/model-state.js",
   "./js/chat-ui.js",
   "./js/modes.js",
-  "./js/safety-rules.js"
+  "./js/safety-rules.js",
+  "./js/diagnostics.js",
+  "./workers/webllm-worker.js"
 ];
 
 self.addEventListener("install", (event) => {

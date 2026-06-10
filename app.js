@@ -1,7 +1,16 @@
-import { APP_CONFIG } from "./js/config.js";
+import { APP_CONFIG, getModelConfig, isHeavyModel } from "./js/config.js";
 import { generateAssistantResponse } from "./js/ai-engine.js";
 import { loadRequiredModel, isWebLLMSupported, getModelStatus } from "./js/webllm-engine.js";
 import { getBootLines } from "./js/chat-ui.js";
+import {
+  appendDebugLog,
+  downloadDiagnostics,
+  exportDebugLog,
+  getPreviousCrashHint,
+  installGlobalErrorHandlers,
+  markGenerationFinished,
+  markGenerationStarted
+} from "./js/diagnostics.js";
 import { getModelState, normalizeModelId, saveSelectedModel, subscribeModelState, clearModelStorage, setModelState } from "./js/model-state.js";
 import { loadState, saveState, clearState, createMessage, exportHistory, importHistory } from "./js/storage.js";
 import {
@@ -29,6 +38,8 @@ let state = loadState();
 const elements = getElements();
 let bootLineTimer = null;
 let isGenerating = false;
+let generationTimer = null;
+let generationStartedAt = 0;
 
 function persist(patch = {}) {
   state = saveState({ ...state, ...patch });
@@ -40,7 +51,8 @@ function renderControls() {
   renderVenomSelect(elements.venomLevel, state.venomLevel);
   renderVenomSelect(elements.venomMiniLevel, state.venomLevel, { compact: true });
   renderCompactState(elements, state, modelState);
-  renderModelPanel(elements, modelState);
+  renderModelPanel(elements, modelState, { isGenerating });
+  if (isGenerating) setThinking(elements, true);
 }
 
 async function initialize() {
@@ -49,6 +61,8 @@ async function initialize() {
   renderMessages(elements.messageList, state.messages);
   setChatAvailability(elements, false);
   renderControls();
+  installGlobalErrorHandlers((message) => showStatus(elements, message));
+  renderCrashHintIfNeeded();
   bindEvents();
   bindModelState();
   registerServiceWorker();
@@ -60,7 +74,7 @@ function bindModelState() {
   subscribeModelState((modelState) => {
     renderBootScreen(elements, modelState);
     renderCompactState(elements, state, modelState);
-    renderModelPanel(elements, modelState);
+    renderModelPanel(elements, modelState, { isGenerating });
     if (modelState.status !== "ready") setChatAvailability(elements, false);
   });
 }
@@ -94,6 +108,10 @@ function bindEvents() {
   });
   elements.reloadModelButton.addEventListener("click", () => retryLoadModel(state.selectedModel));
   elements.changeModelButton.addEventListener("click", () => changeModel(elements.modelSelect.value));
+  elements.exportDiagnosticButton?.addEventListener("click", () => {
+    downloadDiagnostics(exportDebugLog({ modelState: getModelState(), crashHint: getPreviousCrashHint() }));
+    showStatus(elements, "Diagnostic JSON exporté. Voilà de quoi nourrir le laboratoire.");
+  });
 
   elements.fatalSelect.addEventListener("change", () => saveSelectedModel(elements.fatalSelect.value));
   elements.retryModelButton.addEventListener("click", () => retryLoadModel(elements.fatalSelect.value || state.selectedModel));
@@ -128,6 +146,10 @@ function startBootQuips() {
 }
 
 async function bootWebLLM(modelId = state.selectedModel) {
+  if (isGenerating) {
+    showStatus(elements, "Agripine réfléchit déjà. Ne secoue pas la cage.");
+    return;
+  }
   showBoot(elements);
   setChatAvailability(elements, false);
 
@@ -167,11 +189,31 @@ function renderChatReady() {
 }
 
 async function retryLoadModel(modelId) {
-  await bootWebLLM(normalizeModelId(modelId));
+  if (isGenerating) {
+    showStatus(elements, "Agripine réfléchit déjà. Ne secoue pas la cage.");
+    return;
+  }
+  const selectedModel = normalizeModelId(modelId);
+  const modelConfig = getModelConfig(selectedModel);
+  if (isHeavyModel(selectedModel) && !confirm(modelConfig.warning || "Ce modèle est plus lourd et peut faire planter le navigateur. Continuer ?")) {
+    showStatus(elements, "Rechargement lourd annulé. Étonnamment raisonnable.");
+    return;
+  }
+  await bootWebLLM(selectedModel);
 }
 
 async function changeModel(modelId) {
+  if (isGenerating) {
+    showStatus(elements, "Agripine réfléchit déjà. Ne secoue pas la cage.");
+    return;
+  }
   const selectedModel = normalizeModelId(modelId);
+  const modelConfig = getModelConfig(selectedModel);
+  if (isHeavyModel(selectedModel) && !confirm(modelConfig.warning || "Ce modèle est plus lourd et peut faire planter le navigateur. Continuer ?")) {
+    elements.modelSelect.value = state.selectedModel;
+    showStatus(elements, "Choix lourd annulé. Le navigateur vient d’éviter une séance de cardio.");
+    return;
+  }
   persist({ selectedModel });
   saveSelectedModel(selectedModel);
   await bootWebLLM(selectedModel);
@@ -187,7 +229,11 @@ function updateVenom(venomLevel) {
 async function handleSubmit(event) {
   event.preventDefault();
   const modelState = getModelState();
-  if (modelState.status !== "ready" || isGenerating) {
+  if (isGenerating) {
+    showStatus(elements, "Agripine réfléchit déjà. Ne secoue pas la cage.");
+    return;
+  }
+  if (modelState.status !== "ready") {
     showStatus(elements, "Patience. Même une IA hostile a besoin de charger ses circuits.");
     return;
   }
@@ -200,7 +246,7 @@ async function handleSubmit(event) {
   }
 
   if (text.length > APP_CONFIG.webLLMConfig.maxUserMessageLength) {
-    showStatus(elements, `Trop long. ${APP_CONFIG.webLLMConfig.maxUserMessageLength} caractères maximum pour cette V0.2.0, tragédie comprise.`);
+    showStatus(elements, `Trop long. ${APP_CONFIG.webLLMConfig.maxUserMessageLength} caractères maximum pour cette V0.2.1, tragédie comprise.`);
     elements.messageInput.focus();
     return;
   }
@@ -211,13 +257,26 @@ async function handleSubmit(event) {
   appendMessage(elements.messageList, userMessage);
   elements.messageInput.value = "";
   autoResizeTextarea(elements.messageInput);
-  setThinking(elements, true);
   isGenerating = true;
+  generationStartedAt = Date.now();
+  setThinking(elements, true);
+  renderControls();
+  startGenerationTimer();
 
   const assistantMessage = createMessage("assistant", "");
   let appendedAssistant = false;
 
   try {
+    markGenerationStarted({
+      model: getModelState().selectedModel,
+      modeId: state.activeMode,
+      venomLevel: state.venomLevel,
+      messageLength: text.length,
+      historyCount: previousMessages.length,
+      useStreaming: APP_CONFIG.webLLMConfig.useStreaming,
+      maxAssistantTokens: APP_CONFIG.webLLMConfig.maxAssistantTokens
+    });
+
     const result = await generateAssistantResponse({
       text,
       modeId: state.activeMode,
@@ -239,19 +298,27 @@ async function handleSubmit(event) {
     persist({ messages: [...state.messages, assistantMessage] });
   } catch (error) {
     console.error(error);
+    appendDebugLog("generation_error", error);
     const errorMessage = createMessage("assistant", "Mon cerveau local vient de trébucher dans ses propres câbles. Réessaie, mammifère persistant.");
     persist({ messages: [...state.messages, errorMessage] });
     appendMessage(elements.messageList, errorMessage);
     showStatus(elements, "Génération échouée. Le cerveau local assume sa chute.");
   } finally {
+    markGenerationFinished();
     isGenerating = false;
+    stopGenerationTimer();
     setThinking(elements, false);
     setChatAvailability(elements, getModelState().status === "ready");
+    renderControls();
     elements.messageInput.focus();
   }
 }
 
 function startNewConversation() {
+  if (isGenerating) {
+    showStatus(elements, "Agripine réfléchit déjà. Ne secoue pas la cage.");
+    return;
+  }
   if (state.messages.length && !confirm("Vider la conversation actuelle ? Tu peux l’exporter avant si tu veux garder cette brillante catastrophe.")) return;
   persist({ messages: [] });
   renderMessages(elements.messageList, state.messages);
@@ -260,6 +327,7 @@ function startNewConversation() {
 }
 
 function clearAllHistory() {
+  if (isGenerating && !confirm("Agripine génère encore. Effacer maintenant peut laisser un diagnostic de crash. Continuer malgré tout ?")) return;
   if (!confirm("Effacer toutes les données locales d’Agripine : conversation, modèle choisi, mode actif et niveau de venin ? Action irréversible, comme certaines réunions.")) return;
   clearState();
   clearModelStorage();
@@ -282,15 +350,43 @@ async function handleImport(event) {
     renderMessages(elements.messageList, state.messages);
     showStatus(elements, "Import réussi. Ton passé revient, comme une mauvaise réunion.");
     if (imported.settings.selectedModel && imported.settings.selectedModel !== getModelState().selectedModel) {
-      await changeModel(imported.settings.selectedModel);
+      if (!isGenerating) await changeModel(imported.settings.selectedModel);
     }
   } catch (error) {
     console.error(error);
+    appendDebugLog("import_error", error);
     showStatus(elements, "Import impossible : fichier invalide ou trop honteux pour être lu.");
   } finally {
     event.target.value = "";
     elements.messageInput.focus();
   }
+}
+
+function renderCrashHintIfNeeded() {
+  const crashHint = getPreviousCrashHint();
+  if (!crashHint) return;
+  const systemMessage = createMessage("system", `${crashHint.message} Diagnostic conservé dans Options > Diagnostic technique.`);
+  persist({ messages: [...state.messages, systemMessage] });
+  appendMessage(elements.messageList, systemMessage);
+  showStatus(elements, "Redémarrage pendant génération détecté : probable crash WebGPU/mémoire.");
+}
+
+function startGenerationTimer() {
+  stopGenerationTimer();
+  generationTimer = window.setInterval(() => {
+    const elapsed = Math.floor((Date.now() - generationStartedAt) / 1000);
+    showStatus(
+      elements,
+      elapsed > 45
+        ? `Génération en cours depuis ${elapsed} s. Génération longue. Ne ferme pas l’onglet. Oui, je sais, c’est pénible.`
+        : `Génération en cours depuis ${elapsed} s. Agripine réfléchit avec son cerveau local.`
+    );
+  }, 1000);
+}
+
+function stopGenerationTimer() {
+  if (generationTimer) window.clearInterval(generationTimer);
+  generationTimer = null;
 }
 
 function registerServiceWorker() {
