@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#11131a" />
+    <meta name="description" content="Agripine, anti-assistante conversationnelle locale, sarcastique et offline-first." />
+    <title>AGRIPINE — Une IA qui vous veut du mal !</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="assets/icon.svg" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <noscript>
+      <div class="noscript">Agripine a besoin de JavaScript pour mépriser correctement tes demandes.</div>
+    </noscript>
+
+    <div class="app-shell">
+      <section class="welcome-screen" id="welcomeScreen" aria-labelledby="welcomeTitle">
+        <div class="brand-card welcome-card">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 96 96" role="img" focusable="false">
+              <path d="M10 48s14-24 38-24 38 24 38 24-14 24-38 24S10 48 10 48Z" />
+              <circle cx="48" cy="48" r="15" />
+              <path class="brand-brow" d="M25 34c17-10 32-10 46 0" />
+            </svg>
+          </div>
+          <p class="eyebrow">Anti-assistante locale</p>
+          <h1 id="welcomeTitle">AGRIPINE</h1>
+          <p class="slogan">Une IA qui vous veut du mal !</p>
+          <p class="welcome-quip" id="welcomeQuip">Chargement du sarcasme...</p>
+          <button class="primary-action" id="wakeButton" type="button">Réveiller la sale bête</button>
+          <p class="version" id="welcomeVersion">Version : Agripine V0.1.1</p>
+        </div>
+      </section>
+
+      <main class="chat-screen is-hidden" id="chatScreen">
+        <header class="app-header">
+          <div class="header-brand">
+            <img src="assets/icon.svg" alt="" width="38" height="38" />
+            <div>
+              <p class="eyebrow">AGRIPINE</p>
+              <h2>Console de contrariété</h2>
+            </div>
+          </div>
+          <button class="ghost-button compact-button" id="newChatButton" type="button">Nouvelle</button>
+        </header>
+
+        <section class="compact-toolbar" aria-label="État et accès rapide aux options">
+          <button class="state-badge" id="activeModeBadge" type="button" aria-label="Mode actif">Mode : Général</button>
+          <label class="venom-mini" for="venomMiniLevel">
+            <span id="venomCompactLabel">Venin 3</span>
+            <select id="venomMiniLevel" aria-label="Niveau de venin compact"></select>
+          </label>
+          <button class="ghost-button options-toggle" id="optionsToggle" type="button" aria-expanded="false" aria-controls="optionsPanel">Options</button>
+        </section>
+
+        <section class="options-panel is-collapsed" id="optionsPanel" aria-label="Options Agripine" hidden>
+          <div class="options-grid">
+            <div class="option-group">
+              <h3>Modes rapides</h3>
+              <div class="modes" id="modeButtons" aria-label="Choix du mode"></div>
+            </div>
+
+            <div class="option-group">
+              <h3>Venin</h3>
+              <label class="venom-control" for="venomLevel">
+                <span>Niveau complet</span>
+                <select id="venomLevel"></select>
+              </label>
+            </div>
+
+            <div class="option-group">
+              <h3>Données locales</h3>
+              <div class="data-actions">
+                <button class="ghost-button" id="exportButton" type="button">Exporter JSON</button>
+                <label class="ghost-button import-label" for="importInput">Importer JSON</label>
+                <input id="importInput" type="file" accept="application/json,.json" />
+              </div>
+            </div>
+
+            <div class="option-group about-box">
+              <h3>À propos</h3>
+              <p class="version" id="appVersion">Version : Agripine V0.1.1</p>
+              <p id="futureModelNote">WebLLM V0.2 : désactivé en V0.1.1. Aucun modèle n’est chargé, mammifère prudent.</p>
+            </div>
+
+            <div class="option-group danger-zone">
+              <h3>Zone dangereuse</h3>
+              <button class="danger-button" id="clearHistoryButton" type="button">Effacer toutes les données locales</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="chat-card" aria-label="Conversation avec Agripine">
+          <div class="status-line" id="statusLine" role="status" aria-live="polite">Agripine observe ton désordre en silence.</div>
+          <div class="message-list" id="messageList" aria-live="polite"></div>
+          <form class="composer" id="messageForm">
+            <label class="sr-only" for="messageInput">Message à Agripine</label>
+            <textarea id="messageInput" rows="1" placeholder="Dépose ta demande ici. Elle sera jugée, puis traitée." autocomplete="off"></textarea>
+            <button class="send-button" id="sendButton" type="submit">Envoyer</button>
+          </form>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

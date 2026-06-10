@@ -1,0 +1,20 @@
+{
+  "name": "Agripine",
+  "short_name": "Agripine",
+  "description": "Anti-assistante conversationnelle locale, sarcastique et offline-first.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0d1017",
+  "theme_color": "#11131a",
+  "orientation": "portrait-primary",
+  "lang": "fr-FR",
+  "icons": [
+    {
+      "src": "assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
