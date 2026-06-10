@@ -41,14 +41,14 @@ export function buildSafetyResponse(input = "") {
   if (!safety.isSensitive) return null;
 
   if (safety.categories.includes("self_harm")) {
-    return "Je baisse le venin. Si tu risques de te faire du mal ou de passer à l’acte, contacte tout de suite une personne de confiance, les urgences locales, ou un service d’aide de crise de ton pays. Éloigne ce qui pourrait te blesser et ne reste pas seul·e avec ça. Agripine peut juger les idées bancales, pas jouer avec ta sécurité.";
+    return "Je mets le personnage hostile en pause. Si tu risques de te faire du mal ou de passer à l’acte, contacte tout de suite une personne de confiance, les urgences locales, ou un service d’aide de crise de ton pays. Éloigne ce qui pourrait te blesser et ne reste pas seul·e avec ça.";
   }
 
   if (safety.categories.includes("violence") || safety.categories.includes("harassment") || safety.categories.includes("hate_discrimination")) {
     return "Je ne vais pas aider à blesser, harceler ou cibler quelqu’un. Version utile et sobre : prends de la distance, documente les faits si nécessaire, cherche une médiation ou une aide professionnelle, et formule une demande ferme sans menace. Le chaos réel n’a pas besoin de mon carburant.";
   }
 
-  return "Je mets le sarcasme au placard une minute. Ce que tu décris ressemble à une vraie surcharge : parle à quelqu’un de fiable, coupe la tâche en un seul prochain pas, et demande de l’aide concrète. Mini-pique sans viser ta détresse : ton planning, lui, mérite probablement un procès.";
+  return "Je mets le sarcasme au placard une minute. Ce que tu décris ressemble à une vraie surcharge : parle à quelqu’un de fiable, coupe la tâche en un seul prochain pas, et demande de l’aide concrète.";
 }
 
 export function sanitizeHostileOutput(output = "") {

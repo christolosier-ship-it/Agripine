@@ -1,5 +1,5 @@
 import { APP_CONFIG, DEFAULT_STATE, DEFAULT_PSEUDO_MEMORY } from "./config.js";
-import { getMode, getVenomLevel } from "./modes.js";
+import { getMode } from "./modes.js";
 
 function cloneDefaultState() {
   const clone = typeof structuredClone === "function" ? structuredClone(DEFAULT_STATE) : JSON.parse(JSON.stringify(DEFAULT_STATE));
@@ -20,15 +20,22 @@ function normalizeMessages(messages) {
 }
 
 function normalizePseudoMemory(memory = {}) {
-  return { ...DEFAULT_PSEUDO_MEMORY, ...memory };
+  return { ...DEFAULT_PSEUDO_MEMORY, ...(memory || {}) };
 }
 
 function normalizeSettings(settings = {}) {
   const nextSettings = {};
-  const modeAliases = { rewrite: "destroy-text", "send-away": "go-away", "fake-help": "pretend-help", "plan-action": "action-plan" };
+  const modeAliases = {
+    rewrite: "destroy-text",
+    "send-away": "go-away",
+    "fake-help": "pretend-help",
+    "plan-action": "bad-plan",
+    "action-plan": "bad-plan",
+    "sort-list": "organization-roast",
+    "almost-polite": "vaguely-usable"
+  };
   const activeMode = modeAliases[settings.activeMode] || settings.activeMode;
   if (activeMode && getMode(activeMode).id === activeMode) nextSettings.activeMode = activeMode;
-  if (settings.venomLevel && getVenomLevel(settings.venomLevel).value === Number(settings.venomLevel)) nextSettings.venomLevel = Number(settings.venomLevel);
   if (settings.pseudoMemory) nextSettings.pseudoMemory = normalizePseudoMemory(settings.pseudoMemory);
   return nextSettings;
 }
@@ -39,7 +46,7 @@ function readStateFromStorage() {
     const raw = localStorage.getItem(key);
     if (raw) return JSON.parse(raw);
   }
-  return null;
+  return undefined;
 }
 
 export function loadState() {
@@ -47,7 +54,14 @@ export function loadState() {
     const parsed = readStateFromStorage();
     if (!parsed) return cloneDefaultState();
     const settings = normalizeSettings(parsed.settings || parsed);
-    return { ...cloneDefaultState(), ...parsed, ...settings, messages: normalizeMessages(parsed.messages), pseudoMemory: normalizePseudoMemory(parsed.pseudoMemory || settings.pseudoMemory) };
+    return {
+      ...cloneDefaultState(),
+      ...parsed,
+      ...settings,
+      messages: normalizeMessages(parsed.messages),
+      activeMode: getMode(settings.activeMode || parsed.activeMode).id,
+      pseudoMemory: normalizePseudoMemory(parsed.pseudoMemory || settings.pseudoMemory)
+    };
   } catch (error) {
     console.warn("Agripine n'a pas réussi à lire le stockage local.", error);
     return cloneDefaultState();
@@ -57,7 +71,6 @@ export function loadState() {
 export function saveState(state) {
   const nextState = {
     messages: normalizeMessages(state.messages),
-    venomLevel: Number(state.venomLevel) || DEFAULT_STATE.venomLevel,
     activeMode: getMode(state.activeMode).id,
     pseudoMemory: normalizePseudoMemory(state.pseudoMemory),
     createdAt: state.createdAt || new Date().toISOString(),
@@ -85,9 +98,8 @@ export function exportHistory(state) {
     version: APP_CONFIG.version,
     createdAt: state.createdAt || new Date().toISOString(),
     exportedAt: new Date().toISOString(),
-    venomLevel: state.venomLevel,
-    activeMode: state.activeMode,
-    settings: { venomLevel: state.venomLevel, activeMode: state.activeMode },
+    activeMode: getMode(state.activeMode).id,
+    settings: { activeMode: getMode(state.activeMode).id },
     pseudoMemory: normalizePseudoMemory(state.pseudoMemory),
     messages: normalizeMessages(state.messages).filter((message) => ["user", "assistant"].includes(message.role))
   };
@@ -108,11 +120,12 @@ export async function importHistory(file) {
 export function parseImportedState(payload) {
   const messages = Array.isArray(payload) ? payload : payload.messages;
   if (!Array.isArray(messages)) throw new Error("Le fichier ne contient pas un historique Agripine valide.");
-  const rawSettings = Array.isArray(payload) ? {} : { ...(payload.settings || {}), activeMode: payload.activeMode || payload.settings?.activeMode, venomLevel: payload.venomLevel || payload.settings?.venomLevel, pseudoMemory: payload.pseudoMemory };
+  const rawSettings = Array.isArray(payload) ? {} : { ...(payload.settings || {}), activeMode: payload.activeMode || payload.settings?.activeMode, pseudoMemory: payload.pseudoMemory };
   delete rawSettings.useWebLLM;
   delete rawSettings.provider;
   delete rawSettings.fallbackEnabled;
   delete rawSettings.selectedModel;
   delete rawSettings.lastSuccessfulModel;
+  delete rawSettings.venomLevel;
   return { messages: normalizeMessages(messages).filter((message) => ["user", "assistant"].includes(message.role)), settings: normalizeSettings(rawSettings) };
 }

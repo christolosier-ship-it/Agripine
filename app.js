@@ -10,7 +10,6 @@ import {
   renderCompactState,
   renderMessages,
   renderModes,
-  renderVenomSelect,
   setChatAvailability,
   setOptionsOpen,
   setThinking,
@@ -31,8 +30,6 @@ function persist(patch = {}) {
 
 function renderControls() {
   renderModes(elements.modeButtons, state.activeMode);
-  renderVenomSelect(elements.venomLevel, state.venomLevel);
-  renderVenomSelect(elements.venomMiniLevel, state.venomLevel, { compact: true });
   renderCompactState(elements, state);
   if (isGenerating) setThinking(elements, true);
 }
@@ -71,8 +68,6 @@ function bindEvents() {
     elements.messageInput.focus();
   });
 
-  elements.venomLevel.addEventListener("change", () => updateVenom(Number(elements.venomLevel.value)));
-  elements.venomMiniLevel.addEventListener("change", () => updateVenom(Number(elements.venomMiniLevel.value)));
   elements.resetMoodButton.addEventListener("click", resetMood);
   elements.messageInput.addEventListener("input", () => autoResizeTextarea(elements.messageInput));
   elements.messageInput.addEventListener("keydown", (event) => {
@@ -116,13 +111,6 @@ async function bootLocalHostility() {
   }
 }
 
-function updateVenom(venomLevel) {
-  persist({ venomLevel });
-  renderControls();
-  showStatus(elements, "Niveau de venin sauvegardé. Mauvais présage, bon réglage.");
-  elements.messageInput.focus();
-}
-
 async function handleSubmit(event) {
   event.preventDefault();
   if (isGenerating) {
@@ -155,7 +143,7 @@ async function handleSubmit(event) {
   try {
     const analysis = analyzeInput(text);
     await playThinkingSequence(getFakeThinkingSequence(analysis), analysis.safety.isSensitive);
-    const result = await generateAgripineResponse(text, { activeMode: state.activeMode, venomLevel: state.venomLevel, pseudoMemory: state.pseudoMemory });
+    const result = await generateAgripineResponse(text, { activeMode: state.activeMode, pseudoMemory: state.pseudoMemory });
     const assistantMessage = createMessage("assistant", result.content || "Vide local. Même mon mépris n’a rien trouvé.");
     persist({ messages: [...state.messages, assistantMessage], pseudoMemory: result.pseudoMemory });
     appendMessage(elements.messageList, assistantMessage);
@@ -176,9 +164,8 @@ async function handleSubmit(event) {
 }
 
 async function playThinkingSequence(sequence, sober = false) {
-  const theatrical = state.venomLevel >= 4 && !sober;
-  const min = theatrical ? APP_CONFIG.fakeThinking.theatricalMinMs : APP_CONFIG.fakeThinking.quickMinMs;
-  const max = theatrical ? APP_CONFIG.fakeThinking.theatricalMaxMs : APP_CONFIG.fakeThinking.quickMaxMs;
+  const min = sober ? APP_CONFIG.fakeThinking.quickMinMs : APP_CONFIG.fakeThinking.quickMinMs;
+  const max = sober ? APP_CONFIG.fakeThinking.quickMaxMs : APP_CONFIG.fakeThinking.theatricalMaxMs;
   const total = min + Math.random() * (max - min);
   const stepDelay = total / Math.max(sequence.length, 1);
   for (const line of sequence) {
@@ -205,7 +192,7 @@ function startNewConversation() {
 
 function clearAllHistory() {
   if (isGenerating && !confirm("Agripine génère encore. Effacer maintenant ?")) return;
-  if (!confirm("Effacer toutes les données locales d’Agripine : conversation, humeur, mode actif et niveau de venin ?")) return;
+  if (!confirm("Effacer toutes les données locales d’Agripine : conversation, humeur et mode actif ?")) return;
   clearState();
   state = loadState();
   renderControls();

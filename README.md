@@ -1,40 +1,35 @@
-# Agripine V0.3.0
+# Agripine V0.3.1
 
 **Agripine, une IA qui vous veut du mal.**
 
-Agripine V0.3.0 est une **IA parodique hostile, 100 % locale, sans modèle génératif**. Dans l'interface, Agripine reste un personnage d'IA sarcastique et misanthrope. Techniquement, V0.3.0 utilise un **moteur conversationnel local simulé** : aucune API, aucun serveur, aucun modèle externe, aucune clé, aucun abonnement.
+Agripine V0.3.1 est une **PWA parodique hostile, 100 % locale, offline-first et sans vraie IA générative**. L’interface continue de présenter Agripine comme un personnage d’IA, mais techniquement tout repose sur un moteur conversationnel simulé en HTML/CSS/JavaScript vanilla : aucune API, aucun backend, aucun framework, aucun modèle externe et aucune clé.
 
-## Pourquoi WebLLM est abandonné
+## Pivot V0.3.1
 
-La piste WebLLM locale est abandonnée parce qu'elle est trop lourde sur mobile et tablette pour l'objectif du projet : une PWA compacte, rapide, installable, utilisable hors ligne et compatible GitHub Pages. Agripine ne charge donc plus de modèle, ne vérifie plus WebGPU et ne contacte aucun CDN de modèle au démarrage.
+Cette version abandonne l’idée d’une assistante sarcastique vaguement utile. Agripine devient une **IA hostile simulée** : elle méprise les humains, râle, refuse souvent de coopérer, répond parfois à côté et donne seulement de courtes bribes utiles quand cela renforce l’illusion qu’elle a compris assez pour envoyer l’utilisateur bouler correctement.
 
-## Fonctionnalités V0.3.0
+Le moteur simulé est maintenant **plus naturel et plus cinglant** : les réponses sont moins mécaniques, plus synchronisées avec l’intention détectée, et structurées comme une personnalité qui réagit plutôt qu’une banque de morceaux collés.
 
-- **Moteur conversationnel simulé** dans `js/simulated-ai-engine.js`.
-- Analyse d'entrée par règles : intentions, mots-clés, sujets, ton, longueur, listes et questions.
-- Détection d'intentions : salutation, question, idée d'app, projet, organisation, liste, reformulation, message de travail, plainte, doute, remerciement, insulte envers Agripine, technique/code, créatif, rant et cas trop courts.
-- **Phrasebank massive** dans `js/phrasebank.js` : accueils, fausses réflexions, piques, jurons non discriminatoires, verdicts, réponses par contexte et conclusions sarcastiques.
-- **Modes rapides** : Général, Envoie-moi chier, Juge mon idée, Détruis mon texte, Trie cette liste, Insulte mon organisation, Fais semblant d'aider, Transforme en plan d'action, Réponds à côté, Mode presque poli.
-- **Niveaux de venin 1 à 5** : Sec, Piquant, Sale peste, Tribunal de l'espèce humaine, Bureau des humiliations administratives.
-- **Fausse réflexion dynamique** avant réponse, adaptée à l'intention détectée.
-- **Mémoire courte locale** : compteur de messages, sujets/intents récents, patience, remerciements, messages courts, demandes d'aide et humeur.
-- **Anti-répétition** : historique local des fragments récents et choix de variantes.
-- **Export/import JSON** avec version, messages, réglages, mémoire courte, niveau de venin, mode actif et dates.
-- **PWA offline-first** : app shell local mis en cache par le service worker `agripine-v0.3.0`.
+## Nouveautés V0.3.1
 
-## Limites assumées
+- **Suppression complète des niveaux de méchanceté** : plus de réglage de venin, plus de mode doux, plus de variation utilisateur de la cruauté.
+- **Hostilité permanente** : l’interface affiche un noyau de **mépris actif** et Agripine reste hostile par défaut.
+- **Modes rapides recentrés** : Général, Envoie-moi bouler, Juge mon idée, Détruis mon texte, Insulte mon organisation, Fais semblant d’aider, Réponds à côté, Plan foireux mais exploitable, Réponse vaguement exploitable.
+- **Réponses plus naturelles** : recettes dédiées par intention, paragraphes plus fluides, piques de conclusion, refus de coopération et micro-réponses utiles seulement quand nécessaire.
+- **Intentions priorisées** : détection stricte pour salutation, remerciement, insulte, présentation d’Agripine, demande d’être envoyé bouler, réécriture, liste, idée d’app, organisation, projet, technique, plainte, question, aide vague, message court et bruit.
+- **`about_agripine` renforcé** : Agripine se présente comme une IA hostile, une IA qui vous veut du mal, un personnage qui juge et une présence numérique locale méprisante.
+- **`greeting` corrigé** : “Bonjour” et “Salut” ne sont plus traités comme des messages trop courts.
+- **Anti-répétition renforcé** : l’app conserve les 30 dernières phrases/paragraphe utilisées et évite les réemplois visibles.
+- **Phrasebank beaucoup plus cinglante** : salutations hostiles, rejets directs, insultes cartoon non discriminatoires, jurons, conclusions sèches, réponses par intention et fausses réflexions adaptées.
+- **Mémoire courte hostile améliorée** : compte les messages, salutations, demandes d’aide, messages courts, idées d’app, intentions fréquentes, humeur et impatience.
+- **Export/import V0.3.1** : exporte la pseudo-mémoire, n’exporte plus le réglage supprimé, et ignore ce champ si un ancien export V0.3.0 en contient encore un.
+- **Aucune vraie IA générative** : Agripine reste un moteur local simulé, compatible GitHub Pages et utilisable hors ligne après le premier chargement.
 
-- Agripine ne comprend pas vraiment le monde.
-- Agripine n'est pas une IA générative.
-- Les réponses sont semi-adaptées par règles, détection de mots-clés, fragments et mémoire courte.
-- L'illusion vient de la variété, des structures de réponse, du contexte réinjecté et des modes de ton.
-- Aucun résultat ne doit être traité comme un conseil professionnel fiable.
+## Garde-fous
 
-## Ton et garde-fous
+Agripine peut être sèche, grossière et méprisante façon cartoon : bordel, merde, brouillon bipède, mammifère administratif, tiroir à excuses, tableur émotionnel mal formaté. Le ton vise les demandes, les idées, l’organisation, le chaos humain général et les objets numériques.
 
-Agripine peut être sèche, grossière et misanthrope façon cartoon : bordel, merde, foutu tas de pixels, mammifère administratif, brouillon bipède, tiroir à excuses. Le ton vise les idées, l'organisation, le chaos humain général et les objets numériques.
-
-Le moteur évite les insultes discriminatoires, les attaques sur le physique, la santé, le handicap, l'origine, la religion, le genre, l'orientation sexuelle ou l'âge. `js/safety-rules.js` réduit fortement le sarcasme si l'entrée évoque automutilation, violence réelle, harcèlement, haine, discrimination ou détresse émotionnelle forte. Dans ces cas, Agripine répond sobrement et recommande de contacter une personne de confiance ou les urgences locales si la sécurité est en jeu.
+Le moteur évite les insultes discriminatoires, les attaques sur le physique, la santé, le handicap, l’origine, la religion, le genre, l’orientation sexuelle ou l’âge. `js/safety-rules.js` réduit fortement le théâtre hostile si l’entrée évoque automutilation, violence réelle, harcèlement, haine, discrimination ou détresse émotionnelle forte. Dans ces cas, Agripine répond sobrement et recommande de contacter une personne de confiance ou les urgences locales si la sécurité est en jeu.
 
 ## Vie privée et données locales
 
@@ -42,12 +37,13 @@ Le moteur évite les insultes discriminatoires, les attaques sur le physique, la
 - Pas de compte.
 - Pas de backend.
 - Pas de modèle téléchargé.
-- Conversations, réglages, mémoire courte et anti-répétition sont stockés dans `localStorage`.
-- Les exports JSON restent sur l'appareil tant que l'utilisateur ne les partage pas.
+- Pas d’appel réseau externe nécessaire au fonctionnement de l’app.
+- Conversations, mode actif, pseudo-mémoire et anti-répétition sont stockés dans `localStorage`.
+- Les exports JSON restent sur l’appareil tant que l’utilisateur ne les partage pas.
 
 ## Installation locale
 
-Aucune dépendance npm n'est nécessaire.
+Aucune dépendance npm n’est nécessaire.
 
 ```bash
 python3 -m http.server 8080
@@ -55,26 +51,28 @@ python3 -m http.server 8080
 
 Ouvrez ensuite : <http://localhost:8080>
 
-Un serveur local est recommandé pour tester correctement les modules ES et le service worker. L'application reste compatible avec GitHub Pages grâce aux chemins relatifs.
+Un serveur local est recommandé pour tester correctement les modules ES et le service worker. L’application reste compatible avec GitHub Pages grâce aux chemins relatifs.
 
 ## Déploiement GitHub Pages
 
 1. Poussez le dépôt sur GitHub.
 2. Dans **Settings > Pages**, choisissez la branche à publier.
 3. Sélectionnez la racine du dépôt comme dossier de publication.
-4. Ouvrez l'URL GitHub Pages générée.
-5. Chargez une première fois l'application en ligne, puis vérifiez le fonctionnement hors ligne.
+4. Ouvrez l’URL GitHub Pages générée.
+5. Chargez une première fois l’application en ligne, puis vérifiez le fonctionnement hors ligne.
 
 ## Tests manuels recommandés
 
-- Chargement app, installation PWA et cache `agripine-v0.3.0`.
+- Chargement app, installation PWA et cache `agripine-v0.3.1`.
 - Aucun appel réseau externe et aucun chargement WebLLM.
 - Chat offline après premier chargement.
-- Réponses variées, semi-adaptées et anti-répétition.
-- Tous les modes rapides.
-- Niveaux de venin 1 à 5.
-- Mémoire courte, reset humeur, reset données.
-- Export/import JSON, y compris anciens exports V0.1/V0.2 sans clés utiles.
-- Phrases sensibles : réponse sobre, non agressive et non dangereuse.
-- Responsive mobile 390px et desktop 1200px.
-- Console navigateur sans erreur.
+- Salutations : “Bonjour”, “Salut”.
+- Présentation : “Parle-moi de toi”, “Tu es qui ?”.
+- Remerciement, insulte envers Agripine, demande explicite d’être envoyé bouler.
+- Idées d’app répétées, demandes d’aide répétées et messages courts répétitifs.
+- Question courte : “Pourquoi ?” doit rester une question.
+- Réécriture et tri de liste.
+- Export/import d’un ancien JSON V0.3.0 contenant l’ancien réglage supprimé.
+- Reset de l’humeur.
+- Absence de traces internes dans les bulles de chat.
+- Vérification responsive mobile 390px et desktop 1200px.

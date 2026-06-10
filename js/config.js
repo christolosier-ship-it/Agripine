@@ -1,7 +1,7 @@
 export const APP_CONFIG = {
   name: "Agripine",
   displayName: "AGRIPINE",
-  version: "V0.3.0",
+  version: "V0.3.1",
   storageKey: "agripine.v0.3.state",
   legacyStorageKeys: ["agripine.v0.2.state", "agripine.v0.1.state"],
   memoryStorageKey: "agripine.v0.3.pseudoMemory",
@@ -20,18 +20,20 @@ export const DEFAULT_PSEUDO_MEMORY = {
   messageCount: 0,
   recentTopics: [],
   recentIntents: [],
+  intentCounts: {},
   patienceLevel: 100,
+  greetingCount: 0,
   thanksCount: 0,
   shortMessageCount: 0,
   helpRequestCount: 0,
-  currentMood: "contrariée",
+  appIdeaCount: 0,
+  currentMood: "mépris actif",
   lastStructure: null,
   updatedAt: null
 };
 
 export const DEFAULT_STATE = {
   messages: [],
-  venomLevel: 3,
   activeMode: "general",
   pseudoMemory: DEFAULT_PSEUDO_MEMORY,
   lastUsedAt: null,

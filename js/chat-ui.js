@@ -1,5 +1,5 @@
 import { APP_CONFIG } from "./config.js";
-import { MODES, VENOM_LEVELS, getMode, getVenomLevel } from "./modes.js";
+import { MODES, getMode } from "./modes.js";
 
 const BOOT_LINES = [
   "Noyau de contrariété actif.",
@@ -23,12 +23,9 @@ export function getElements() {
     modelNote: document.querySelector("#modelNote"),
     activeModeBadge: document.querySelector("#activeModeBadge"),
     brainBadge: document.querySelector("#brainBadge"),
-    venomCompactLabel: document.querySelector("#venomCompactLabel"),
-    venomMiniLevel: document.querySelector("#venomMiniLevel"),
     optionsToggle: document.querySelector("#optionsToggle"),
     optionsPanel: document.querySelector("#optionsPanel"),
     modeButtons: document.querySelector("#modeButtons"),
-    venomLevel: document.querySelector("#venomLevel"),
     memoryDiagnostic: document.querySelector("#memoryDiagnostic"),
     resetMoodButton: document.querySelector("#resetMoodButton"),
     messageList: document.querySelector("#messageList"),
@@ -47,7 +44,7 @@ export function setVersionText(elements) {
   const text = `Version : Agripine ${APP_CONFIG.version}`;
   elements.bootVersion.textContent = text;
   elements.appVersion.textContent = text;
-  elements.modelNote.textContent = "Agripine est une IA parodique hostile. En V0.3.0, elle utilise un moteur conversationnel local simulé : aucune API, aucun serveur, aucun modèle génératif. Elle ne comprend pas vraiment le monde. Elle le juge quand même.";
+  elements.modelNote.textContent = "Agripine est une IA parodique hostile. Elle fonctionne en local avec un moteur simulé, sans API ni modèle génératif. Elle ne comprend pas vraiment les humains. Elle les juge quand même, ce qui est souvent suffisant.";
 }
 
 export function getBootLines() {
@@ -74,16 +71,18 @@ export function renderBootScreen(elements) {
 
 export function renderCompactState(elements, state) {
   const mode = getMode(state.activeMode);
-  const venom = getVenomLevel(state.venomLevel);
   elements.activeModeBadge.textContent = `Mode : ${mode.shortLabel}`;
   elements.activeModeBadge.title = mode.label;
-  elements.venomCompactLabel.textContent = `Venin ${venom.value}`;
-  elements.brainBadge.textContent = "Noyau : hostilité locale";
+  elements.brainBadge.textContent = "Mépris actif";
   if (elements.memoryDiagnostic) {
     const memory = state.pseudoMemory || {};
     elements.memoryDiagnostic.textContent = [
       `Messages : ${memory.messageCount || 0}`,
-      `Humeur : ${memory.currentMood || "contrariée"}`,
+      `Salutations : ${memory.greetingCount || 0}`,
+      `Demandes d’aide : ${memory.helpRequestCount || 0}`,
+      `Messages courts : ${memory.shortMessageCount || 0}`,
+      `Idées d’app : ${memory.appIdeaCount || 0}`,
+      `Humeur : ${memory.currentMood || "mépris actif"}`,
       `Patience : ${memory.patienceLevel ?? 100}/100`,
       `Intentions récentes : ${(memory.recentIntents || []).join(", ") || "aucune"}`,
       `Sujets récents : ${(memory.recentTopics || []).join(", ") || "aucun"}`
@@ -109,17 +108,6 @@ export function renderModes(container, activeMode) {
     button.title = mode.description;
     button.textContent = mode.label;
     container.append(button);
-  });
-}
-
-export function renderVenomSelect(select, currentValue, { compact = false } = {}) {
-  select.innerHTML = "";
-  VENOM_LEVELS.forEach((level) => {
-    const option = document.createElement("option");
-    option.value = String(level.value);
-    option.textContent = compact ? String(level.value) : level.label;
-    option.selected = level.value === Number(currentValue);
-    select.append(option);
   });
 }
 
@@ -175,8 +163,6 @@ export function setChatAvailability(elements, isReady) {
 export function setThinking(elements, isThinking) {
   elements.sendButton.disabled = isThinking;
   elements.messageInput.disabled = isThinking;
-  elements.venomLevel.disabled = isThinking;
-  elements.venomMiniLevel.disabled = isThinking;
   elements.modeButtons.querySelectorAll("button").forEach((button) => { button.disabled = isThinking; });
   elements.statusLine.classList.toggle("is-thinking", isThinking);
 }
