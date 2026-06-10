@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Agripine</title>
+  <desc id="desc">Œil unique d'assistante sarcastique.</desc>
+  <rect width="512" height="512" rx="112" fill="#0d1017"/>
+  <path d="M70 256s68-104 186-104 186 104 186 104-68 104-186 104S70 256 70 256Z" fill="#151922" stroke="#a7f73a" stroke-width="24" stroke-linejoin="round"/>
+  <circle cx="256" cy="256" r="68" fill="#10161f" stroke="#9e73ff" stroke-width="20"/>
+  <circle cx="256" cy="256" r="24" fill="#a7f73a"/>
+  <path d="M142 176c72-45 155-45 228 0" fill="none" stroke="#f2efe7" stroke-width="22" stroke-linecap="round" opacity=".72"/>
+</svg>
