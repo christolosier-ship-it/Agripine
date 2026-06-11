@@ -102,10 +102,10 @@ async function bootLocalHostility() {
   clearInterval(bootLineTimer);
   showChat(elements);
   setChatAvailability(elements, true);
-  showStatus(elements, "IA hostile prête. Noyau de contrariété actif.");
-  const readyAlreadyVisible = state.messages.some((message) => message.role === "system" && message.content.includes("IA hostile prête"));
+  showStatus(elements, "IA hostile prête. Mépris actif.");
+  const readyAlreadyVisible = state.messages.some((message) => message.role === "system" && (message.content.includes("Agripine est réveillée") || message.content.includes("IA hostile prête")));
   if (!readyAlreadyVisible) {
-    const systemMessage = createMessage("system", "IA hostile prête. Aucune API, aucun serveur, juste de la mauvaise humeur locale.");
+    const systemMessage = createMessage("system", "Agripine est réveillée. Mauvaise nouvelle pour l’humanité.");
     persist({ messages: [...state.messages, systemMessage] });
     appendMessage(elements.messageList, systemMessage);
   }
@@ -147,7 +147,7 @@ async function handleSubmit(event) {
     const assistantMessage = createMessage("assistant", result.content || "Vide local. Même mon mépris n’a rien trouvé.");
     persist({ messages: [...state.messages, assistantMessage], pseudoMemory: result.pseudoMemory });
     appendMessage(elements.messageList, assistantMessage);
-    showStatus(elements, "Réponse livrée. La dignité, elle, reste en option.");
+    showStatus(elements, "Réponse lâchée. Ramasse les morceaux.");
   } catch (error) {
     console.error(error);
     const errorMessage = createMessage("assistant", "Mon moteur local simulé a trébuché. C’est rare, vexant, et probablement lié à ton aura de tableur.");
@@ -169,7 +169,7 @@ async function playThinkingSequence(sequence, sober = false) {
   const total = min + Math.random() * (max - min);
   const stepDelay = total / Math.max(sequence.length, 1);
   for (const line of sequence) {
-    showStatus(elements, sober ? "Agripine réduit le sarcasme et lit prudemment…" : line);
+    showStatus(elements, sober ? "Lecture prudente…" : line);
     await sleep(stepDelay);
   }
 }

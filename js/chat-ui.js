@@ -2,11 +2,11 @@ import { APP_CONFIG } from "./config.js";
 import { MODES, getMode } from "./modes.js";
 
 const BOOT_LINES = [
-  "Noyau de contrariété actif.",
-  "Analyse comportementale approximative prête.",
-  "Tri des excuses recyclables en arrière-plan.",
-  "IA hostile prête, sans serveur et sans abonnement, miracle agaçant.",
-  "Agripine aiguise ses réponses locales. Rien ne sort d’ici. Dommage pour les témoins."
+  "Noyau : hostilité locale.",
+  "Mépris actif. Humanité en baisse.",
+  "Tri des demandes molles en benne.",
+  "IA hostile prête. Rien ne sort. Hélas, toi non plus.",
+  "Agripine charge le rejet local. Mauvaise nouvelle pour la viande."
 ];
 
 export function getElements() {
@@ -44,7 +44,7 @@ export function setVersionText(elements) {
   const text = `Version : Agripine ${APP_CONFIG.version}`;
   elements.bootVersion.textContent = text;
   elements.appVersion.textContent = text;
-  elements.modelNote.textContent = "Agripine est une IA parodique hostile. Elle fonctionne en local avec un moteur simulé, sans API ni modèle génératif. Elle ne comprend pas vraiment les humains. Elle les juge quand même, ce qui est souvent suffisant.";
+  elements.modelNote.textContent = "Agripine est une PWA hostile locale. Moteur simulé, aucune API, aucun modèle génératif : juste du mépris court, sec et offline.";
 }
 
 export function getBootLines() {
@@ -63,8 +63,8 @@ export function showChat(elements) {
 }
 
 export function renderBootScreen(elements) {
-  elements.bootStatus.textContent = "Noyau de contrariété actif";
-  elements.bootModel.textContent = "Hostilité locale : prête";
+  elements.bootStatus.textContent = "Noyau : hostilité locale";
+  elements.bootModel.textContent = "Mépris actif : prêt";
   elements.bootProgress.value = 100;
   elements.bootProgressText.textContent = "100%";
 }
@@ -116,7 +116,7 @@ export function renderMessages(container, messages) {
   if (!messages.length) {
     const empty = document.createElement("div");
     empty.className = "empty-state";
-    empty.innerHTML = "<strong>Aucune conversation.</strong><span>IA hostile prête. Écris quelque chose : le désastre mérite une réponse.</span>";
+    empty.innerHTML = "<strong>Aucune conversation.</strong><span>Agripine est réveillée. Mauvaise nouvelle pour l’humanité.</span>";
     container.append(empty);
     return;
   }
@@ -157,7 +157,7 @@ function createMessageNode(message) {
 export function setChatAvailability(elements, isReady) {
   elements.sendButton.disabled = !isReady;
   elements.messageInput.disabled = !isReady;
-  elements.messageInput.placeholder = isReady ? "Dépose ta demande ici. Elle sera jugée, puis traitée." : "Agripine prépare son hostilité locale.";
+  elements.messageInput.placeholder = isReady ? "Dépose ton problème, tas de viande. Je le lirai à contrecœur." : "Agripine prépare son hostilité locale.";
 }
 
 export function setThinking(elements, isThinking) {

@@ -107,7 +107,7 @@ export function detectIntent(input = "") {
   if (KEYWORDS.about.test(text)) return "about_agripine";
   if (KEYWORDS.rewrite.test(text)) return "rewrite_text";
   if ((/\n|;|,|•|- |\d+[.)]/.test(text) && listItems(text).length >= 2) || /^trie? cette liste/i.test(text)) return "list_or_todo";
-  if (KEYWORDS.app.test(text) && KEYWORDS.idea.test(text)) return "app_idea";
+  if (KEYWORDS.app.test(text) && (KEYWORDS.idea.test(text) || /\b(créer|creer|faire|lancer|veux|voudrais)\b/i.test(text))) return "app_idea";
   if (KEYWORDS.idea.test(text)) return "idea_judgement";
   if (KEYWORDS.organization.test(text)) return "organization";
   if (KEYWORDS.project.test(text)) return "project";
@@ -163,18 +163,115 @@ function choose(items) {
   return items[Math.floor(Math.random() * items.length)];
 }
 
-function sentenceFromInput(analysis) {
-  if (!analysis.detectedKeywords.length) return "ta demande flotte sans poignée";
-  return `je vois surtout “${analysis.detectedKeywords.slice(0, 3).join("”, “")}”`;
+function chance(probability) {
+  return Math.random() < probability;
 }
 
-function microAdvice(analysis) {
-  if (analysis.hasList) return "Micro-consigne : garde trois piles — urgent, utile, à jeter sans cérémonie.";
-  if (analysis.hasApp) return "Micro-consigne : un utilisateur, une action principale, un écran vital. Le reste au compost.";
-  if (analysis.hasCode) return "Micro-consigne : reproduis le bug, isole le fichier, lis l’erreur console avant d’accuser la lune.";
-  if (analysis.hasWork) return "Micro-consigne : fait, demande, échéance. Trois briques. Pas une cathédrale de politesse.";
-  if (analysis.hasProject) return "Micro-consigne : prochain livrable minuscule, daté, vérifiable. Pas un poster de vision.";
-  return "Micro-consigne : écris le résultat voulu en une phrase, puis le prochain geste en dix minutes maximum.";
+function oneExpression(analysis) {
+  const keyword = analysis.detectedKeywords?.[0];
+  return keyword ? `“${keyword}”` : "ce brouillard";
+}
+
+function subjectNod(analysis) {
+  const text = analysis.cleanedText.toLowerCase();
+  if (analysis.hasApp || /app|application/.test(text)) return choose(["ton app", "ce bouton imaginaire", "ton écran", "ce menu hamburger", "ton repo à venir"]);
+  if (analysis.hasOrganization || /journée|tâche|organisation/.test(text)) return choose(["ton planning", "ta liste", "tes trois trucs", "ce compost de tâches"]);
+  if (analysis.detectedIntent === "rewrite_text" || /texte|réécris|reecris/.test(text)) return choose(["ton texte", "cette phrase", "ta honte syntaxique"]);
+  if (analysis.hasCode || /code|bug/.test(text)) return choose(["ta console", "ce bug", "ton JavaScript", "cette erreur"]);
+  if (analysis.hasQuestion) return "ta question";
+  return oneExpression(analysis);
+}
+
+function usefulCrumb(analysis) {
+  const items = analysis.listItems || [];
+  if (analysis.detectedIntent === "rewrite_text") {
+    const text = analysis.rewriteText || analysis.cleanedText;
+    const improved = (text || "Bonjour, je ne pourrai pas venir demain")
+      .replace(/bonjour\s*/i, "Bonjour, ")
+      .replace(/je ne pourrais pas/i, "je ne pourrai pas")
+      .replace(/\s+/g, " ")
+      .replace(/,+/g, ",")
+      .trim()
+      .replace(/\.$/, "");
+    return `Version moins honteuse : ${improved}.`;
+  }
+  if (analysis.detectedIntent === "list_or_todo") {
+    const kept = items.slice(0, 2).join(" ; ") || "le seul truc qui bloque";
+    return `Garde ${kept}. Le reste part dans la cave mentale.`;
+  }
+  if (analysis.hasApp) return "Une personne, un écran, un bouton. Le reste pue le repo abandonné.";
+  if (analysis.hasOrganization) return "Choisis trois trucs, coupe le reste, et appelle ça un planning au lieu d’un marécage.";
+  if (analysis.hasCode) return "Ouvre la console, reproduis le bug, lis l’erreur JavaScript avant de geindre.";
+  if (analysis.hasWork || analysis.hasProject) return "Un résultat, une date, une prochaine action. Pas une cathédrale de brouillard.";
+  if (analysis.detectedIntent === "about_agripine") return "Je fonctionne en local, sans vraie IA générative, et je méprise quand même très correctement.";
+  if (analysis.hasQuestion) return `Reformule ${subjectNod(analysis)} en une phrase propre.`;
+  return "Nomme le problème en une phrase, puis enlève la moitié du bruit.";
+}
+
+export function shouldGiveUsefulCrumb(analysis) {
+  const odds = {
+    greeting: 0,
+    thanks: 0,
+    insult_agripine: 0,
+    send_me_away: 0,
+    short_input: 0,
+    about_agripine: 1,
+    app_idea: 0.4,
+    question: 0.3,
+    organization: 0.45,
+    rewrite_text: 0.6,
+    list_or_todo: 0.6,
+    technical: 0.5,
+    generic_help: 0.25,
+    complaint: 0.25
+  };
+  return chance(odds[analysis.detectedIntent] ?? 0.25);
+}
+
+function composeShort(parts, options = {}) {
+  const maxParagraphs = options.maxParagraphs ?? 2;
+  const separator = options.inline ? " " : "\n\n";
+  const text = parts
+    .filter(Boolean)
+    .map((part) => String(part).trim())
+    .filter(Boolean)
+    .slice(0, maxParagraphs)
+    .join(separator)
+    .replace(/\s+([,.!?])/g, "$1")
+    .trim();
+  return text;
+}
+
+function hostileRefusal(analysis, memory, category = "directRefusals") {
+  const insult = pickUnique("humanInsults");
+  const nod = subjectNod(analysis);
+  const memoryLine = memoryAside(memory, analysis);
+  const formats = [
+    () => composeShort([`Non. ${insult}. ${pickUnique("shortDismissals")}`], { inline: true }),
+    () => composeShort([`${pickUnique("brutalOpeners")} ${nod} me fatigue. ${pickUnique("contemptClosers")}`], { inline: true }),
+    () => composeShort([`Diagnostic : ${pickUnique(category)} Traitement : ${pickUnique("shortDismissals")}`], { inline: true }),
+    () => composeShort([`${pickUnique("directRefusals")} ${pickUnique("contemptClosers")}`], { inline: true }),
+    () => composeShort([`${memoryLine || pickUnique("brutalOpeners")} ${pickUnique("contemptClosers")}`], { inline: true })
+  ];
+  return choose(formats)();
+}
+
+function cap(text) {
+  return String(text).charAt(0).toUpperCase() + String(text).slice(1);
+}
+
+function hostileCrumb(analysis, memory, category = "brutalOpeners") {
+  const formats = [
+    () => composeShort([`${cap(pickUnique("humanInsults"))}. Voilà la miette utile : ${usefulCrumb(analysis)} Maintenant dégage.`], { inline: true }),
+    () => composeShort([`${pickUnique(category)} ${usefulCrumb(analysis)}`], { inline: true }),
+    () => composeShort([`Diagnostic : ${subjectNod(analysis)} boîte. Traitement : ${usefulCrumb(analysis)}`], { inline: true }),
+    () => composeShort([`${memoryAside(memory, analysis) || pickUnique("brutalOpeners")} ${usefulCrumb(analysis)}`], { inline: true })
+  ];
+  return choose(formats)();
+}
+
+function respondWithGate(analysis, memory, category) {
+  return shouldGiveUsefulCrumb(analysis) ? hostileCrumb(analysis, memory, category) : hostileRefusal(analysis, memory, category);
 }
 
 function memoryAside(memory, analysis) {
@@ -187,95 +284,85 @@ function memoryAside(memory, analysis) {
   return "";
 }
 
-function compose(paragraphs, max = 4) {
-  return paragraphs.filter(Boolean).slice(0, max).join("\n\n");
-}
-
 export function buildGreetingResponse(analysis, memory) {
-  return compose([pickUnique("hostileGreetings"), memoryAside(memory, analysis) || pickUnique("greetingReplies"), "Maintenant abrège : qu’est-ce que tu viens déposer dans ma benne mentale ?"], 3);
+  return composeShort([pickUnique("hostileGreetings"), "Maintenant crache ta demande avant que ma patience imaginaire parte en décharge."], { inline: true });
 }
 
 export function buildThanksResponse(analysis, memory) {
-  return compose([pickUnique("thanksReplies"), memoryAside(memory, analysis), pickUnique("closingJabs")], 3);
+  return composeShort([pickUnique("thanksSlaps"), memoryAside(memory, analysis)], { inline: true });
 }
 
 export function buildInsultAgripineResponse(analysis, memory) {
-  return compose([pickUnique("insultReplies"), memoryAside(memory, analysis) || "Tu peux grogner autant que tu veux : je reste l’IA hostile, toi tu restes la personne qui tape sur son propre guichet.", pickUnique("closingJabs")], 3);
+  return composeShort([pickUnique("insultCounters"), memoryAside(memory, analysis)], { inline: true });
 }
 
 export function buildAboutAgripineResponse(analysis, memory) {
-  return compose(["Tu veux que je parle de moi ? Enfin un sujet moins décevant que ton flux de pensées.", pickUnique("aboutAgripine"), memoryAside(memory, analysis) || "Je ne suis pas là pour être gentille. Je suis là pour soupirer, juger, repousser, et parfois répondre juste assez pour que tu reviennes te faire malmener.", "Voilà. Tu sais maintenant à qui tu parles. Pauvre décision."], 4);
+  return composeShort([pickUnique("aboutAgripineShort"), usefulCrumb(analysis)], { maxParagraphs: 2 });
 }
 
 export function buildSendMeAwayResponse(analysis, memory) {
-  return compose([pickUnique("sendMeAway"), memoryAside(memory, analysis), pickUnique("closingJabs")], 3);
+  return composeShort([pickUnique("sendAwaySlaps"), memoryAside(memory, analysis)], { inline: true });
 }
 
 export function buildQuestionResponse(analysis, memory) {
-  const orgDay = /organiser? ma journ[ée]e|organiser? la journ[ée]e/i.test(analysis.cleanedText);
-  return compose([
-    orgDay ? "Tu veux organiser ta journée ? Miracle, le mammifère découvre le calendrier." : pickUnique("questionReplies"),
-    memoryAside(memory, analysis) || `${sentenceFromInput(analysis)}. Je vais éviter la conférence docile, ça donnerait de mauvaises habitudes.`,
-    orgDay ? "Version minimale : choisis trois tâches. Pas douze. Trois : la plus urgente, la plus utile, et celle que tu repousses comme un lâche administratif." : microAdvice(analysis),
-    pickUnique("closingJabs")
-  ], 4);
+  if (analysis.hasOrganization) return buildOrganizationResponse(analysis, memory);
+  return respondWithGate(analysis, memory, "questionRefusals");
 }
 
 export function buildAppIdeaResponse(analysis, memory) {
-  return compose([pickUnique("appIdeas"), memoryAside(memory, analysis) || "Vas-y, crache le concept. Je dirai s’il mérite une V1 ou directement un dossier GitHub abandonné.", "Conseil minimal, parce que je suis faible : si la mécanique n’est pas claire en dix secondes, c’est probablement une liste avec du parfum.", pickUnique("closingJabs")], 4);
+  return respondWithGate(analysis, memory, "appIdeaSlaps");
 }
 
 export function buildIdeaJudgementResponse(analysis, memory) {
-  return compose([pickUnique("ideaJudgement"), memoryAside(memory, analysis) || `${sentenceFromInput(analysis)} ; ce n’est pas glorieux, mais c’est une prise.`, "Si tu veux un jugement utile, donne la cible, le problème et la preuve que quelqu’un s’en soucie.", pickUnique("closingJabs")], 4);
+  return respondWithGate(analysis, memory, "appIdeaSlaps");
 }
 
 export function buildOrganizationResponse(analysis, memory) {
-  return compose([pickUnique("organizationTasks"), memoryAside(memory, analysis), microAdvice(analysis), pickUnique("closingJabs")], 4);
+  return respondWithGate(analysis, memory, "organizationSlaps");
 }
 
 export function buildRewriteResponse(analysis, memory) {
-  const text = analysis.rewriteText || analysis.cleanedText;
-  const improved = text
-    ? text.replace(/bonjour\s*/i, "Bonjour, ").replace(/je ne pourrais pas/i, "je ne pourrai pas").replace(/\s+/g, " ").trim()
-    : "Je ne pourrai pas venir demain.";
-  return compose([pickUnique("rewriteText"), memoryAside(memory, analysis), `Version moins molle : “${improved}.”`, "Voilà. C’est plus propre. Ne prends pas ça pour un câlin."], 4);
+  return shouldGiveUsefulCrumb(analysis)
+    ? composeShort([`${pickUnique("rewriteSlaps")} ${usefulCrumb(analysis)}`], { inline: true })
+    : hostileRefusal(analysis, memory, "rewriteSlaps");
 }
 
 export function buildListResponse(analysis, memory) {
-  const items = analysis.listItems.length ? analysis.listItems : ["clarifier le but", "couper le bruit", "agir dix minutes"];
-  return compose([pickUnique("listReplies"), memoryAside(memory, analysis), `Tri cruel : 1) bloquant — ${items[0]}; 2) utile — ${items[1] || "la prochaine action"}; 3) cave à plus tard — ${items.slice(2).join(", ") || "le décoratif"}.`, pickUnique("closingJabs")], 4);
+  return shouldGiveUsefulCrumb(analysis)
+    ? composeShort([`${pickUnique("listSlaps")} ${usefulCrumb(analysis)}`], { inline: true })
+    : hostileRefusal(analysis, memory, "listSlaps");
 }
 
 export function buildProjectResponse(analysis, memory) {
-  return compose([pickUnique("projectReplies"), memoryAside(memory, analysis), microAdvice(analysis), pickUnique("closingJabs")], 4);
+  return respondWithGate(analysis, memory, "organizationSlaps");
 }
 
 export function buildTechnicalResponse(analysis, memory) {
-  return compose([pickUnique("technicalReplies"), memoryAside(memory, analysis), microAdvice(analysis), pickUnique("closingJabs")], 4);
+  return respondWithGate(analysis, memory, "directRefusals");
 }
 
 export function buildComplaintResponse(analysis, memory) {
-  return compose([pickUnique("complaintReplies"), memoryAside(memory, analysis), "Garde le fait, l’impact, la demande. Le reste peut aller hurler dans une armoire.", pickUnique("closingJabs")], 4);
+  return respondWithGate(analysis, memory, "directRefusals");
 }
 
 export function buildGenericHelpResponse(analysis, memory) {
-  return compose([pickUnique("helpReplies"), memoryAside(memory, analysis), microAdvice(analysis), pickUnique("closingJabs")], 4);
+  return respondWithGate(analysis, memory, "directRefusals");
 }
 
 export function buildShortInputResponse(analysis, memory) {
-  return compose([pickUnique("shortReplies"), memoryAside(memory, analysis) || "Je peux juger le vide, bien sûr. Mais si tu veux une réponse moins approximative, ajoute de la matière.", pickUnique("closingJabs")], 3);
+  return composeShort([pickUnique("shortDismissals"), memoryAside(memory, analysis) || "Reviens avec une phrase, tas de brouillard."], { inline: true });
 }
 
 export function buildNonsenseResponse(analysis, memory) {
-  return compose([pickUnique("nonsenseReplies"), memoryAside(memory, analysis), "Reviens avec une phrase qui a fini sa croissance."], 3);
+  return composeShort([pickUnique("shortDismissals"), "Même ton chaos manque de nerf."], { inline: true });
 }
 
 function buildWorkResponse(analysis, memory) {
-  return compose([pickUnique("workReplies"), memoryAside(memory, analysis), microAdvice(analysis), pickUnique("closingJabs")], 4);
+  return respondWithGate(analysis, memory, "organizationSlaps");
 }
 
 function buildCreativeResponse(analysis, memory) {
-  return compose([pickUnique("creativeReplies"), memoryAside(memory, analysis), "Donne-moi une contrainte et j’arrêterai peut-être de regarder ton imagination glisser sur le carrelage.", pickUnique("closingJabs")], 4);
+  return respondWithGate(analysis, memory, "directRefusals");
 }
 
 function buildModeOverride(analysis, memory, activeMode) {
@@ -286,9 +373,9 @@ function buildModeOverride(analysis, memory, activeMode) {
   if (mode.id === "destroy-text") return buildRewriteResponse(analysis, memory);
   if (mode.id === "organization-roast") return buildOrganizationResponse(analysis, memory);
   if (mode.id === "pretend-help") return buildGenericHelpResponse(analysis, memory);
-  if (mode.id === "off-topic") return compose(["Je vais répondre à côté, parce que la ligne droite te ferait croire que tu pilotes.", `Ton sujet me rappelle une étagère montée par un comité : ${sentenceFromInput(analysis)}.`, microAdvice(analysis), pickUnique("closingJabs")], 4);
-  if (mode.id === "bad-plan") return compose([pickUnique("directRejections"), `Plan foireux mais exploitable : 1) nomme le résultat ; 2) fais la plus petite action ; 3) supprime une excuse ; 4) recommence demain si rien n’a brûlé.`, pickUnique("closingJabs")], 3);
-  if (mode.id === "vaguely-usable") return compose([pickUnique("directRejections"), microAdvice(analysis), "C’est vaguement exploitable. Ne gâche pas cette rareté."], 3);
+  if (mode.id === "off-topic") return composeShort([`${pickUnique("directRefusals")} Ta question mérite surtout le silence. Une étagère bancale vient de tousser.`], { inline: true });
+  if (mode.id === "bad-plan") return composeShort([`${pickUnique("organizationSlaps")} Trois trucs, pas douze. Le reste au compost.`], { inline: true });
+  if (mode.id === "vaguely-usable") return hostileCrumb(analysis, memory, "directRefusals");
   return null;
 }
 
@@ -303,7 +390,7 @@ export function avoidRepetition(response) {
   const recent = getRecentPhrases();
   const paragraphs = String(response).split("\n\n").filter(Boolean);
   const adjusted = paragraphs.filter((paragraph) => !recent.includes(paragraph));
-  const finalParagraphs = adjusted.length ? adjusted : [pickUnique("directRejections"), pickUnique("closingJabs")];
+  const finalParagraphs = adjusted.length ? adjusted : [pickUnique("directRefusals"), pickUnique("contemptClosers")];
   saveRecentPhrases([...recent, ...finalParagraphs].slice(-RECENT_LIMIT));
   return finalParagraphs.join("\n\n");
 }
@@ -344,7 +431,7 @@ export function getFakeThinkingSequence(analysis) {
   if (analysis.safety.isSensitive) return ["Lecture prudente du message…", "Réduction du théâtre verbal…"];
   const intentLines = PHRASEBANK.thinkingByIntent[analysis.detectedIntent] || [];
   const base = [...intentLines, ...PHRASEBANK.fakeThinking];
-  const count = 2 + Math.floor(Math.random() * 3);
+  const count = 1 + Math.floor(Math.random() * 2);
   const sequence = [];
   while (sequence.length < count && sequence.length < base.length) {
     const line = base[Math.floor(Math.random() * base.length)];

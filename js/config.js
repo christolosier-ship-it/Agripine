@@ -1,7 +1,7 @@
 export const APP_CONFIG = {
   name: "Agripine",
   displayName: "AGRIPINE",
-  version: "V0.3.1",
+  version: "V0.3.2",
   storageKey: "agripine.v0.3.state",
   legacyStorageKeys: ["agripine.v0.2.state", "agripine.v0.1.state"],
   memoryStorageKey: "agripine.v0.3.pseudoMemory",
@@ -9,10 +9,10 @@ export const APP_CONFIG = {
   historyExportPrefix: "agripine-historique",
   maxMessageLength: 1600,
   fakeThinking: {
-    quickMinMs: 600,
-    quickMaxMs: 900,
-    theatricalMinMs: 1200,
-    theatricalMaxMs: 2200
+    quickMinMs: 250,
+    quickMaxMs: 500,
+    theatricalMinMs: 500,
+    theatricalMaxMs: 900
   }
 };
 
