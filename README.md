@@ -1,75 +1,176 @@
-# Agripine V0.3.2
+<div align="center">
+  <img src="./assets/icon.svg" alt="Agripine logo" width="96" height="96" />
 
-**Agripine, une IA qui vous veut du mal.**
+# Agripine
 
-Agripine V0.3.2 est une **PWA parodique hostile, 100 % locale, offline-first et sans vraie IA générative**. Tout fonctionne en HTML/CSS/JavaScript vanilla : aucune API, aucun backend, aucun framework, aucun modèle externe, aucune clé, aucun WebLLM.
+**Une IA parodique locale qui vous veut du mal, sans serveur, sans compte et sans vraie IA générative.**
 
-## Pivot V0.3.2
+[![Version](https://img.shields.io/badge/version-V0.3.2-a7f73a?style=flat-square)](#version-actuelle)
+[![Vanilla JavaScript](https://img.shields.io/badge/JavaScript-Vanilla-F7DF1E?style=flat-square&logo=javascript&logoColor=000)](./app.js)
+[![Offline first](https://img.shields.io/badge/PWA-Offline--first-9e73ff?style=flat-square)](./service-worker.js)
+[![No dependencies](https://img.shields.io/badge/Dependencies-None-151922?style=flat-square)](#stack-technique)
 
-Agripine n’est plus une assistante sarcastique qui finit par aider proprement. Elle devient plus directe, plus courte, plus cinglante et plus misanthrope façon cartoon : elle attaque, refuse, esquive, répond parfois à côté et lâche seulement une miette utile quand le moteur simulé le décide.
+[Présentation](#présentation) · [Fonctionnalités](#fonctionnalités) · [Démarrage](#démarrage-rapide) · [Architecture](#architecture)
 
-## Nouveautés V0.3.2
+</div>
 
-- **Réponses fortement raccourcies** : la réponse standard tient en une ou deux phrases/paragraphes courts, avec une réponse longue très rare.
-- **Hostilité renforcée** : ton plus sec, plus insultant façon cartoon, avec des piques génériques non discriminatoires contre “la viande”, les demandes floues et le chaos humain.
-- **Suppression du style trop analytique** : plus de micro-consigne systématique, plus de structure de coach productivité, plus de conclusion obligatoire.
-- **Moteur simulé plus direct** : formats courts aléatoires, refus secs, faux diagnostics, demi-réponses et réponses à côté.
-- **Miettes utiles limitées** : selon l’intention détectée, Agripine peut refuser totalement ou donner une bribe courte, notamment pour réécriture, liste, organisation, bug ou app.
-- **Synchronisation minimale avec l’entrée** : Agripine mentionne vaguement le sujet détecté (`app`, `planning`, `texte`, `console`, etc.) sans citer tout le message.
-- **Fausses réflexions raccourcies** : une ou deux étapes sèches, durée réduite, textes moins sérieux.
-- **Interface moins productive** : placeholder plus méprisant, badges hostiles et message système “Agripine est réveillée. Mauvaise nouvelle pour l’humanité.”
-- **Phrasebank refondue** : nouvelles banques courtes et punchy pour refus, insultes cartoon, salutations hostiles, idées d’app, organisation, listes, réécriture, remerciements et expulsion.
-- **Export/import V0.3.2** : exporte la pseudo-mémoire, conserve les données locales utiles et ignore les anciennes clés `venomLevel`.
-- **Toujours aucune vraie IA générative** : Agripine reste un moteur conversationnel local simulé, compatible GitHub Pages et utilisable hors ligne après le premier chargement.
+## Présentation
 
-## Garde-fous
+Agripine est une PWA conversationnelle parodique qui imite une assistante hostile, sèche et volontairement peu serviable. Elle analyse localement quelques intentions, choisit des fragments de réponse, entretient une pseudo-mémoire et adapte son humeur sans appeler de modèle externe.
 
-Agripine peut être sèche, grossière et méprisante façon cartoon : “tas de viande”, “clavier à viande”, “bipède pénible”, “microbe administratif”, “bordel”, “merde”, etc. Le ton vise les demandes, les idées, l’organisation, le chaos humain général et les objets numériques.
+Le projet fonctionne entièrement dans le navigateur avec du HTML, du CSS et des modules JavaScript natifs. Il ne nécessite ni framework, ni dépendance, ni clé API, ni backend.
 
-Le moteur évite les insultes discriminatoires, les attaques sur le physique réel, la santé, le handicap, l’origine, la religion, le genre, l’orientation sexuelle ou l’âge. `js/safety-rules.js` réduit fortement le théâtre hostile si l’entrée évoque automutilation, violence réelle, harcèlement, haine, discrimination ou détresse émotionnelle forte. Dans ces cas, Agripine sort du personnage agressif et répond sobrement.
+> [!NOTE]
+> Agripine n’utilise aucune IA générative. Son comportement repose sur un moteur conversationnel simulé, des règles locales, des banques de phrases et une sélection pseudo-aléatoire.
 
-## Vie privée et données locales
+## Fonctionnalités
 
-- Pas de clé API.
-- Pas de compte.
-- Pas de backend.
-- Pas de modèle téléchargé.
-- Pas d’appel réseau externe nécessaire au fonctionnement de l’app.
-- Conversations, mode actif, pseudo-mémoire et anti-répétition sont stockés dans `localStorage`.
-- Les exports JSON restent sur l’appareil tant que l’utilisateur ne les partage pas.
+- Conversation entièrement locale, sans compte ni serveur.
+- Réponses courtes, hostiles et volontairement imparfaites.
+- Détection légère d’intentions et de sujets.
+- Neuf modes de réponse, du jugement d’idée au plan volontairement bancal.
+- Pseudo-mémoire locale : humeur, sujets récents, intentions et répétitions.
+- Historique, mode actif et mémoire conservés dans `localStorage`.
+- Import et export JSON des conversations et réglages compatibles.
+- Garde-fous dédiés pour les sujets sensibles, avec sortie du personnage hostile.
+- Interface responsive avec faux écran de démarrage et fausses étapes de réflexion.
+- Installation PWA et fonctionnement hors ligne après le premier chargement.
+- Aucun téléchargement de modèle et aucun appel réseau externe requis par l’application.
 
-## Installation locale
+> [!WARNING]
+> Agripine utilise un humour agressif et des insultes génériques façon cartoon. Le projet vise le divertissement et ne doit pas être utilisé comme assistant fiable, outil médical, soutien psychologique ou source de conseil professionnel.
 
-Aucune dépendance npm n’est nécessaire.
+## Modes disponibles
+
+| Mode | Comportement |
+| --- | --- |
+| Général | Hostilité par défaut, vaguement adaptée à la demande |
+| Envoie-moi bouler | Refus sec et porte qui claque |
+| Juge mon idée | Verdict mordant avec une petite piste utile |
+| Détruis mon texte | Critique puis amélioration minimale |
+| Insulte mon organisation | Lecture d’un planning comme une scène de crime |
+| Fais semblant d’aider | Refus théâtral avec limitation des dégâts |
+| Réponds à côté | Esquive et bribe exploitable |
+| Plan foireux mais exploitable | Plan minimal, grinçant et utilisable |
+| Réponse vaguement exploitable | Réponse plus lisible, sans devenir aimable |
+
+## Démarrage rapide
+
+Clonez le dépôt, puis lancez un serveur HTTP local :
 
 ```bash
+git clone https://github.com/christolosier-ship-it/Agripine.git
+cd Agripine
 python3 -m http.server 8080
 ```
 
-Ouvrez ensuite : <http://localhost:8080>
+Ouvrez ensuite `http://localhost:8080`.
 
-Un serveur local est recommandé pour tester correctement les modules ES et le service worker. L’application reste compatible avec GitHub Pages grâce aux chemins relatifs.
+> [!IMPORTANT]
+> Un serveur local est recommandé. Les modules ES et le service worker ne sont pas testés correctement en ouvrant simplement `index.html` depuis le système de fichiers.
 
-## Déploiement GitHub Pages
+## Installation de la PWA
 
-1. Poussez le dépôt sur GitHub.
-2. Dans **Settings > Pages**, choisissez la branche à publier.
-3. Sélectionnez la racine du dépôt comme dossier de publication.
-4. Ouvrez l’URL GitHub Pages générée.
-5. Chargez une première fois l’application en ligne, puis vérifiez le fonctionnement hors ligne.
+1. Ouvrez l’application depuis une adresse HTTPS ou `localhost`.
+2. Utilisez l’option **Installer l’application** du navigateur.
+3. Chargez l’application une première fois en ligne.
+4. Coupez le réseau et vérifiez que l’interface reste disponible.
 
-## Tests manuels recommandés
+Le service worker met en cache l’ensemble du shell applicatif et supprime automatiquement les anciens caches lors d’un changement de version.
 
-- Chargement app, installation PWA et cache `agripine-v0.3.2`.
-- Aucun appel réseau externe et aucun chargement WebLLM.
-- Chat offline après premier chargement.
-- Salutations : “Bonjour”, “Salut”.
-- Présentation : “Parle-moi de toi”, “Tu es qui ?”.
-- Remerciement, insulte envers Agripine, demande explicite d’être envoyé bouler.
-- Idées d’app répétées, demandes d’aide répétées et messages courts répétitifs.
-- Question courte : “Pourquoi ?” doit rester une question.
-- Réécriture, tri de liste, organisation et bug JavaScript.
-- Export/import d’un ancien JSON contenant l’ancien réglage supprimé.
-- Reset de l’humeur.
-- Absence de traces internes dans les bulles de chat.
-- Vérification responsive mobile 390px et desktop 1200px.
+## Vie privée et stockage local
+
+Agripine ne transmet aucune conversation à un service distant. Les données suivantes restent dans le navigateur :
+
+- historique des messages ;
+- mode actif ;
+- pseudo-mémoire et humeur ;
+- fragments récents utilisés pour limiter les répétitions.
+
+L’export produit un fichier JSON local. Rien n’est partagé tant que l’utilisateur ne transmet pas lui-même ce fichier.
+
+> [!TIP]
+> Le bouton **Effacer toutes les données locales** supprime l’historique, la mémoire, le mode actif et les anciennes clés de stockage compatibles.
+
+## Garde-fous
+
+Le module `js/safety-rules.js` détecte plusieurs catégories sensibles : automutilation, violence réelle, harcèlement, discrimination et détresse émotionnelle forte.
+
+Lorsqu’un signal est détecté, Agripine réduit ou abandonne son personnage hostile et fournit une réponse plus sobre. Ces règles restent simples et lexicales : elles ne remplacent pas une modération robuste ni une aide professionnelle.
+
+## Architecture
+
+```text
+Agripine/
+├── assets/
+│   └── icon.svg                # Icône et identité visuelle
+├── js/
+│   ├── chat-ui.js              # Rendu de l’interface et états visuels
+│   ├── config.js               # Version, limites et état par défaut
+│   ├── modes.js                # Définition des neuf modes
+│   ├── phrasebank.js           # Banques de fragments hostiles
+│   ├── safety-rules.js         # Détection des sujets sensibles
+│   ├── simulated-ai-engine.js  # Analyse et génération simulée
+│   └── storage.js              # Persistance, import et export JSON
+├── app.js                      # Orchestration principale
+├── index.html                  # Structure de l’application
+├── manifest.webmanifest        # Métadonnées PWA
+├── service-worker.js           # Cache offline-first
+├── style.css                   # Interface responsive
+└── README.md                   # Documentation du projet
+```
+
+Le flux principal reste volontairement léger :
+
+```text
+Saisie utilisateur
+      ↓
+Analyse locale de l’intention et de la sécurité
+      ↓
+Mise à jour de la pseudo-mémoire
+      ↓
+Sélection du mode, de la structure et des fragments
+      ↓
+Réponse simulée puis sauvegarde dans localStorage
+```
+
+## Stack technique
+
+| Élément | Utilisation |
+| --- | --- |
+| HTML5 | Structure de l’application et accessibilité de base |
+| CSS3 | Interface responsive, thème sombre et animations |
+| JavaScript ES Modules | Orchestration et séparation des responsabilités |
+| Local Storage API | Historique, réglages et pseudo-mémoire |
+| Cache API | Stockage du shell applicatif |
+| Service Worker API | Installation et fonctionnement hors ligne |
+| File API | Import des sauvegardes JSON |
+| Blob API | Export local des conversations |
+| Web App Manifest | Installation en mode autonome |
+
+## Personnalisation
+
+Les principaux points d’extension sont répartis par responsabilité :
+
+- `js/phrasebank.js` pour enrichir le vocabulaire et les formats de réponse ;
+- `js/modes.js` pour ajouter ou modifier les modes ;
+- `js/simulated-ai-engine.js` pour ajuster l’analyse, l’aléatoire et la pseudo-mémoire ;
+- `js/safety-rules.js` pour renforcer les garde-fous ;
+- `js/config.js` pour la version, les limites et les clés de stockage ;
+- `style.css` pour l’identité visuelle.
+
+Après toute modification des fichiers mis en cache, mettez à jour `CACHE_NAME` dans `service-worker.js` afin de forcer le renouvellement du cache installé.
+
+## Déploiement sur GitHub Pages
+
+1. Ouvrez **Settings** → **Pages** dans le dépôt.
+2. Sélectionnez **Deploy from a branch**.
+3. Choisissez la branche à publier et le dossier `/root`.
+4. Enregistrez la configuration.
+5. Ouvrez l’URL générée une première fois en ligne pour initialiser le cache.
+
+Le projet utilise uniquement des chemins relatifs et ne nécessite aucune étape de build ni variable d’environnement.
+
+## Version actuelle
+
+La branche par défaut correspond à **Agripine V0.3.2**. Cette version privilégie les réponses très courtes, l’hostilité cartoon, les refus secs et les miettes utiles occasionnelles, tout en conservant les garde-fous et la compatibilité avec les anciennes sauvegardes.
